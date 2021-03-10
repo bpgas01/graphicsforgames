@@ -16,8 +16,19 @@ public:
 	virtual void update(float deltaTime);
 	virtual void draw();
 
+	float z = 0.03;
+	float b = 2;
+	float x = 0.01;
+
 protected:
+	glm::vec3 position;
+	glm::vec3 pos;
+	
+	void SolarSystem(float dt);
 
 	glm::mat4	m_viewMatrix;
 	glm::mat4	m_projectionMatrix;
+
+	glm::mat4	m_planetTransform;
+	
 };

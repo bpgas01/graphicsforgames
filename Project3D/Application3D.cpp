@@ -38,6 +38,7 @@ void Application3D::shutdown()
 	Gizmos::destroy();
 }
 
+
 void Application3D::update(float deltaTime)
 {
 	// query time since application started
@@ -59,6 +60,15 @@ void Application3D::update(float deltaTime)
 			vec3(-10, 0, -10 + i),
 			i == 10 ? white : black);
 	}
+
+	
+
+
+	mat4 t = glm::rotate(mat4(1), time * 0.45f, glm::normalize(vec3(1, 1, 1)));
+	t[3] = vec4(0, 0, 0, 1);
+
+
+	Gizmos::addAABBFilled(vec3(0), vec3(1), glm::vec4(1, 0, 0, 1), &t);
 
 	// add a transform so that we can see the axis
 	Gizmos::addTransform(mat4(1));
@@ -88,3 +98,31 @@ void Application3D::draw()
 	// draw 2D gizmos using an orthogonal projection matrix (or screen dimensions)
 	Gizmos::draw2D((float)getWindowWidth(), (float)getWindowHeight());
 }
+
+glm::mat4 RotateY(float rads)
+{
+	return mat4(
+		1.f, 0.f, 0.f, 0.f,
+		0.f, cos(rads), -sin(rads), 0.f,
+		0.f, sin(rads), cos(rads), 0.f,
+		0.f, 0.f, 0.f, 1.f
+	);
+}
+
+
+
+void Application3D::SolarSystem(float dt)
+{
+
+	
+	
+	
+
+
+}
+
+
+
+
+
+
