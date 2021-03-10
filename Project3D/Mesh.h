@@ -18,6 +18,10 @@ public:
 
 	void InitialiseQuad();
 
+	void Initialise(unsigned int a_vertextCount, const Vertex* a_vertices,
+		unsigned int a_indexCount = 0,
+		unsigned int* a_indices = nullptr);
+
 	virtual void Draw();
 	
 

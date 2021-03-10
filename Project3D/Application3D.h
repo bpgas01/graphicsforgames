@@ -1,6 +1,9 @@
 #pragma once
 
 #include "Application.h"
+#include "Mesh.h"
+#include "OBJMesh.h"
+#include "Shader.h"
 #include <glm/mat4x4.hpp>
 
 class Application3D : public aie::Application
@@ -19,16 +22,35 @@ public:
 	float z = 0.03;
 	float b = 2;
 	float x = 0.01;
-
-protected:
-	glm::vec3 position;
-	glm::vec3 pos;
+	float val = 2;
 	
-	void SolarSystem(float dt);
-
+protected:
+	glm::vec3 pos;
 	glm::mat4	m_viewMatrix;
 	glm::mat4	m_projectionMatrix;
-
 	glm::mat4	m_planetTransform;
+
+	glm::vec4 colorthing;
+	glm::vec4 bunnyColour;
 	
+	// ====== SHADER =======
+	aie::ShaderProgram		m_simpleShader;
+	aie::ShaderProgram	    m_bunnyShader;
+	// ============================
+
+	// Basic Plane
+	Mesh					m_quadMesh;
+	glm::mat4				m_quadTransform;
+
+	// Bunny Obj
+	aie::OBJMesh m_bunnyMesh;
+    glm::mat4  m_bunnyTransform;
+
+public:
+
+	bool LoadShaperAndMeshLogic();
+	void DrawShaderAndMeshes(glm::mat4, glm::mat4);
+
+
+
 };
