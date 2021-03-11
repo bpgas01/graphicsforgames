@@ -4,6 +4,7 @@
 #include "Mesh.h"
 #include "OBJMesh.h"
 #include "Shader.h"
+#include "Camera.h"
 #include <glm/mat4x4.hpp>
 #include <vector>
 
@@ -26,6 +27,8 @@ public:
 	float val = 2;
 	
 protected:
+
+	Camera m_camera;
 
 	glm::vec3				pos;
 	glm::mat4				m_viewMatrix;

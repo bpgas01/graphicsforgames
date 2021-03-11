@@ -181,7 +181,7 @@ void Application3D::DebugUI()
     static float lightColor[3];
 
    
-
+    static float objMove[3];
     
     ImGui::Begin("Inspector View");
     ImGui::SetNextWindowPos({ 0,0 });
@@ -227,6 +227,16 @@ void Application3D::DebugUI()
             m_iter -=1;       
     }
 
+    ImGui::SliderFloat3("",objMove,0.f,1.0f);
+    m_objects[m_iter]->transform += mat4(
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        objMove[0], objMove[1], objMove[2], 0 // x y z w
+    );
+
+   
+   
     ImGui::End();
 
 }
@@ -264,7 +274,7 @@ void Application3D::update(float deltaTime)
 	// add a transform so that we can see the axis
 	Gizmos::addTransform(mat4(1));
 
-
+    m_camera.Update(deltaTime);
    
 
 
@@ -279,18 +289,21 @@ void Application3D::draw()
 	// wipe the screen to the background colour
 	clearScreen();
 
+    glm::mat4 projectionMatrix = m_camera.GetProjectionMatrix((float)getWindowWidth(), (float)getWindowHeight());
+
+    glm::mat4 viewMatrix = m_camera.GetViewMatrix();
+
 	// update perspective in case window resized
 	m_projectionMatrix = glm::perspective(glm::pi<float>() * 0.25f,
 		getWindowWidth() / (float)getWindowHeight(),
 		0.1f, 1000.f);
 
-	DrawShaderAndMeshes(m_projectionMatrix, m_viewMatrix);
+	DrawShaderAndMeshes(projectionMatrix, viewMatrix);
 
 	// draw 3D gizmos
-	Gizmos::draw(m_projectionMatrix * m_viewMatrix);
+	Gizmos::draw(projectionMatrix * viewMatrix);
 
-	// draw 2D gizmos using an orthogonal projection matrix (or screen dimensions)
-	Gizmos::draw2D((float)getWindowWidth(), (float)getWindowHeight());
+	
 }
 
 bool Application3D::LoadShaperAndMeshLogic()
