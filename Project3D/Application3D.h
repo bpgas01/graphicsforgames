@@ -56,9 +56,9 @@ protected:
 		glm::mat4 transform;
 	};
 
-	gameObject m_bunny;
+	gameObject* m_bunny;
+	gameObject* m_dragon;
 	quadObject m_quad;
-	gameObject dragon;
 	
 
 	// Light Object
@@ -76,7 +76,7 @@ protected:
 	int						m_iter = 0;
 	int						m_max;
 
-	std::vector<gameObject> m_objects;
+	std::vector<gameObject*> m_objects;
 
 
 public:

@@ -211,7 +211,7 @@ void Application3D::DebugUI()
     ImGui::Text("-----------------------");
     ImGui::Text("OBJECT TRANSFROM SETTINGS");
     ImGui::Text("Select Object");
-    ImGui::Text(" << Object Name = %s >> ", m_objects[m_iter].name.c_str());
+    ImGui::Text(" << Object Name = %s >> ", m_objects[m_iter]->name.c_str());
     
     if (ImGui::Button("Prev"))
     {
@@ -370,34 +370,36 @@ bool Application3D::LoadShaperAndMeshLogic()
     };
     m_quad.name = "Simple quad";
 
-
-    if (m_bunny.mesh.load("./stanford/bunny.obj") == false)
+    m_bunny = new gameObject();
+    if (m_bunny->mesh.load("./stanford/bunny.obj") == false)
     {
         printf("Bunny Mesh Failed!\n");
         return false;
     }
 
-    m_bunny.name = "Bunny";
-    m_bunny.transform = {
+    m_bunny->name = "Bunny";
+    m_bunny->transform = {
         0.5f,     0,     0,  0,
            0,  0.5f,     0,  0,
            0,     0,  0.5f,  0,
-           0,     0,     0,  1
-    };
-
-
-  
-    if (dragon.mesh.load("./stanford/dragon.obj") == false) { printf("Error loading mesh"); return false; }
-    dragon.name = "Dragon";
-    dragon.transform = {
-        0.5f,     0,     0,  0,
-           0,  0.5f,     0,  0,
-           0,     0,  0.5f,  0,
-           -3,     0,     3,  1
+           -3,     0,     0,  1
     };
 
     m_objects.push_back(m_bunny);
-    m_objects.push_back(dragon);
+    m_dragon = new gameObject();
+    if (m_dragon->mesh.load("./stanford/dragon.obj") == false) 
+    {
+        return false;
+    }
+    m_dragon->name = "Dragon";
+    m_dragon->transform = {
+       0.5f,     0,     0,  0,
+          0,  0.5f,     0,  0,
+          0,     0,  0.5f,  0,
+          3,     0,     0,  1
+    };
+    m_objects.push_back(m_dragon);
+ 
 
     return true;
 }
@@ -420,7 +422,7 @@ void Application3D::DrawShaderAndMeshes(glm::mat4 a_projectionMatrix, glm::mat4 
 #pragma region Bunny Shader
 
     m_bunnyShader.bind();
-    pvm = a_projectionMatrix * a_viewMatrix * m_bunny.transform;
+    pvm = a_projectionMatrix * a_viewMatrix * m_bunny->transform;
     m_bunnyShader.bindUniform("ProjectionViewModel", pvm);
     
     m_bunnyShader.bindUniform("randcolor", bunnyColour);
@@ -439,30 +441,29 @@ void Application3D::DrawShaderAndMeshes(glm::mat4 a_projectionMatrix, glm::mat4 
     m_phongShader.bindUniform("LightColor", m_light.color);
     m_phongShader.bindUniform("LightDirection", m_light.direction);
     
-
-    // Bind the PVM
-    pvm = a_projectionMatrix * a_viewMatrix * m_bunny.transform;
-    m_phongShader.bindUniform("ProjectionViewModel", pvm);
-
-    // Bind the lighting transforms
-    m_phongShader.bindUniform("ModelMatrix", m_bunny.transform);
-
-
-
-    m_bunny.mesh.draw();
-   
 #pragma endregion
-    
+
     // Bind the PVM
-    pvm = a_projectionMatrix * a_viewMatrix * dragon.transform;
+    pvm = a_projectionMatrix * a_viewMatrix * m_bunny->transform;
     m_phongShader.bindUniform("ProjectionViewModel", pvm);
 
     // Bind the lighting transforms
-    m_phongShader.bindUniform("ModelMatrix", dragon.transform);
+    m_phongShader.bindUniform("ModelMatrix", m_bunny->transform);
+    m_bunny->mesh.draw();
 
+    // ------------------------ -----------------------
 
-    dragon.mesh.draw();
+    // Bind the PVM
+    pvm = a_projectionMatrix * a_viewMatrix * m_dragon->transform;
+    m_phongShader.bindUniform("ProjectionViewModel", pvm);
+
+    // Bind the lighting transforms
+    m_phongShader.bindUniform("ModelMatrix", m_dragon->transform);
+
+    m_dragon->mesh.draw();
+   
     
+   
 }
 
 
