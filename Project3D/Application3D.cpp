@@ -157,7 +157,11 @@ bool Application3D::startup()
 	m_projectionMatrix = glm::perspective(glm::pi<float>() * 0.25f,
 		getWindowWidth() / (float)getWindowHeight(),
 		0.1f, 1000.f);
-	
+
+    m_light.color = { 1, 1,1 };
+    m_ambientLight = { 0.25, 0.25, 0.25 };
+
+    m_iter = 0;
 	return LoadShaperAndMeshLogic();
 }
 
@@ -166,13 +170,81 @@ void Application3D::shutdown()
 	Gizmos::destroy();
 }
 
+// Render IMGUI Debug windows
+void Application3D::DebugUI()
+{
+    // Static Variables
+    static float al;
+    static float lightAlpha;
+    static float colors[3];
+    static float ambientBrightness;
+    static float lightColor[3];
+
+   
+
+    
+    ImGui::Begin("Inspector View");
+    ImGui::SetNextWindowPos({ 0,0 });
+    // Lighting Settings
+    ImGui::Text("-----------------------");
+
+    ImGui::Text("LIGHTING SETTINGS");
+    ImGui::Text("Color Picker"); ColorPicker(" ", lightColor);
+    ImGui::Text("Ambient Brightness"); ImGui::SliderFloat(" ", &ambientBrightness, 0, 0.25, "");
+    ImGui::Text("Light Direction"); ImGui::SliderFloat3(" ", &m_light.direction[0], -1, 1.f, "");
+    m_light.color = { lightColor[0],lightColor[1],lightColor[2] };
+    m_ambientLight = { ambientBrightness,ambientBrightness,ambientBrightness };
+    // Camera Settings
+    ImGui::Spacing();
+    ImGui::Text("-----------------------");
+
+    ImGui::Text("CAMERA SETTINGS");
+    ImGui::Spacing();
+
+    if (ImGui::Button("Move Left")) xPos = 2;
+    ImGui::SameLine();
+    if (ImGui::Button("Move Right")) xPos = -2;
+    ImGui::SameLine(); 
+    if (ImGui::Button("STOP")) xPos = 0;
+    
+    ImGui::Spacing();
+    ImGui::Text("-----------------------");
+    ImGui::Text("OBJECT TRANSFROM SETTINGS");
+    ImGui::Text("Select Object");
+    ImGui::Text(" << Object Name = %s >> ", m_objects[m_iter].name.c_str());
+    
+    if (ImGui::Button("Prev"))
+    {
+        m_iter-=1;
+        if (m_iter < 0)
+            m_iter= 0;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Next"))
+    {
+        m_iter+=1;
+        if (m_iter >= m_objects.size())
+            m_iter -=1;       
+    }
+
+    ImGui::End();
+
+}
+
+
 
 void Application3D::update(float deltaTime)
 {
+    m_max = m_objects.size();
 	// query time since application started
 	float time = getTime();
+    // Render IMGUI debug
+    DebugUI();
+    // rotate camera
+	aie::Input* input = aie::Input::getInstance();
 
-
+    m_viewMatrix = glm::lookAt(vec3(glm::sin(xPos * time) * 10, 10, glm::cos(xPos * time) * 10),
+        vec3(0), vec3(0, 1, 0));
 	// wipe the gizmos clean for this frame
 	Gizmos::clear();
 
@@ -192,32 +264,9 @@ void Application3D::update(float deltaTime)
 	// add a transform so that we can see the axis
 	Gizmos::addTransform(mat4(1));
 
-	aie::Input* input = aie::Input::getInstance();
-    static float al;
-    static float al2;
-	static float colors[3];
-    static float colors2[3];
 
+   
 
-	ImGui::Begin("PLANE");
-	ColorPicker("PLANE", colors);
-    ImGui::DragFloat("ALPHA", &al, .1f, 0.f, 100.f);
-    ImGui::End();
-
-    ImGui::Begin("BUNNY");
-    ColorPicker("BUNNY", colors2);
-    ImGui::DragFloat("ALPHA", &al2, .1f, 0.f, 100.f);
-    ImGui::End();
-
-    if (al < 0.1f) al = 100;
-    if (al2 < 0.1f) al2 = 100;
-
-    bunnyColour = { colors2[0], colors2[1], colors2[2], colors2[3]};
-    bunnyColour.a = al2 * 0.01;
-
-
-	colorthing = { colors[0],colors[1],colors[2],colors[3]};
-    colorthing.a = al * 0.01;
 
 	// quit if we press escape
 
@@ -244,11 +293,12 @@ void Application3D::draw()
 	Gizmos::draw2D((float)getWindowWidth(), (float)getWindowHeight());
 }
 
-
-
-
 bool Application3D::LoadShaperAndMeshLogic()
 {
+
+    
+
+// Shader loading
 #pragma region Quad
     // Load the vertex shader from a file
     m_simpleShader.loadShader(aie::eShaderStage::VERTEX, "./shaders/simple.vert");
@@ -267,55 +317,23 @@ bool Application3D::LoadShaperAndMeshLogic()
     }
 
 
+#pragma endregion
+#pragma region Phong Shader
 
-    //// Define the 6 vertices for the 2 triangles that make the quad
-    //Mesh::Vertex vertices[6];
-    //vertices[0].position = { -0.5f, 0.0f,  0.5f, 1.0f };
-    //vertices[1].position = { 0.5f, 0.0f,  0.5f, 1.0f };
-    //vertices[2].position = { -0.5f, 0.0f, -0.5f, 1.0f };
+    m_phongShader.loadShader(aie::eShaderStage::VERTEX,
+        "./shaders/phong.vert");
+    m_phongShader.loadShader(aie::eShaderStage::FRAGMENT,
+        "./shaders/phong.frag");
 
-
-
-    //vertices[3].position = { -0.5f, 0.0f, -0.5f, 1.0f };
-    //vertices[4].position = { 0.5f, 0.0f,  0.5f, 1.0f };
-    //vertices[5].position = { 0.5f, 0.0f, -0.5f, 1.0f };
-
-    Mesh::Vertex vertices[4];
-    vertices[0].position = { -0.5f,0.f, 0.5f,1.f };
-    vertices[1].position = { 0.5f,0.f, 0.5f, 1.f };
-    vertices[2].position = { -0.5, 0.f, -0.5f, 1.f };
-    vertices[3].position = { 0.5f,0.f, -0.5f, 1.f };
-
-    unsigned int indices[6] = { 0,1,2,2,1,3 };
-
-
-
-
-
-    //m_quadMesh.InitialiseQuad();
-    m_quadMesh.Initialise(4, vertices, 6, indices);
-
-
-
-    // We will make the quad 10 units by 10 units 
-    m_quadTransform = {
-        10,  0,  0,  0,
-         0, 10,  0,  0,
-         0,  0, 10,  0,
-         0,  0,  0,  1
-    };
-
-
-
-  //  m_quadTransform = glm::rotate(m_quadTransform, glm::radians(90.0f), glm::vec3(1, 0, 0));
-
-
-
+    if (m_phongShader.link() == false)
+    {
+        printf("Phong Shader failed to load. Error: %s\n", m_phongShader.getLastError());
+        return false;
+    }
 #pragma endregion
 
-
-
 #pragma region FlatBunny
+
     m_bunnyShader.loadShader(aie::eShaderStage::VERTEX, "./shaders/simple.vert");
 
 
@@ -331,17 +349,36 @@ bool Application3D::LoadShaperAndMeshLogic()
         return false;
     }
 
+#pragma endregion
 
 
-    if (m_bunnyMesh.load("./stanford/bunny.obj") == false)
+    Mesh::Vertex vertices[4];
+    vertices[0].position = { -0.5f,0.f, 0.5f,1.f };
+    vertices[1].position = { 0.5f,0.f, 0.5f, 1.f };
+    vertices[2].position = { -0.5, 0.f, -0.5f, 1.f };
+    vertices[3].position = { 0.5f,0.f, -0.5f, 1.f };
+
+    unsigned int indices[6] = { 0,1,2,2,1,3 };
+    //m_quadMesh.InitialiseQuad();
+    m_quad.mesh.Initialise(4, vertices, 6, indices);
+    // We will make the quad 10 units by 10 units 
+    m_quad.transform = {
+        10,  0,  0,  0,
+         0, 10,  0,  0,
+         0,  0, 10,  0,
+         0,  0,  0,  1
+    };
+    m_quad.name = "Simple quad";
+
+
+    if (m_bunny.mesh.load("./stanford/bunny.obj") == false)
     {
         printf("Bunny Mesh Failed!\n");
         return false;
     }
 
-
-
-    m_bunnyTransform = {
+    m_bunny.name = "Bunny";
+    m_bunny.transform = {
         0.5f,     0,     0,  0,
            0,  0.5f,     0,  0,
            0,     0,  0.5f,  0,
@@ -349,8 +386,18 @@ bool Application3D::LoadShaperAndMeshLogic()
     };
 
 
+  
+    if (dragon.mesh.load("./stanford/dragon.obj") == false) { printf("Error loading mesh"); return false; }
+    dragon.name = "Dragon";
+    dragon.transform = {
+        0.5f,     0,     0,  0,
+           0,  0.5f,     0,  0,
+           0,     0,  0.5f,  0,
+           -3,     0,     3,  1
+    };
 
-#pragma endregion
+    m_objects.push_back(m_bunny);
+    m_objects.push_back(dragon);
 
     return true;
 }
@@ -358,36 +405,64 @@ bool Application3D::LoadShaperAndMeshLogic()
 void Application3D::DrawShaderAndMeshes(glm::mat4 a_projectionMatrix, glm::mat4 a_viewMatrix)
 {
     auto pvm = a_projectionMatrix * a_viewMatrix * glm::mat4(0); // PVM = Projection view matrix
-#pragma region Quad
+#pragma region Quad Shader
     //Bind the shader
     m_simpleShader.bind();
-    pvm = a_projectionMatrix * a_viewMatrix * m_quadTransform;
+    pvm = a_projectionMatrix * a_viewMatrix * m_quad.transform;
     // Bind the transform of the mesh
     m_simpleShader.bindUniform("ProjectionViewModel", pvm);
 
     m_simpleShader.bindUniform("randcolor", colorthing);
-
-    m_quadMesh.Draw();
+    m_quad.mesh.Draw();
+   
 #pragma endregion
 
-#pragma region FlatBunny
+#pragma region Bunny Shader
 
     m_bunnyShader.bind();
-    pvm = a_projectionMatrix * a_viewMatrix * m_bunnyTransform;
+    pvm = a_projectionMatrix * a_viewMatrix * m_bunny.transform;
     m_bunnyShader.bindUniform("ProjectionViewModel", pvm);
     
     m_bunnyShader.bindUniform("randcolor", bunnyColour);
-    // Draw bunny mesh
-    m_bunnyMesh.draw();
+   // m_bunnyMesh.draw();
 
 #pragma endregion
 
+#pragma region Phong
+    // Bind the shader
+    m_phongShader.bind();
+    
+    // Bind the Camera Position
+    m_phongShader.bindUniform("CameraPosition", vec3(glm::inverse(a_viewMatrix)[3]));
+    // Bind the Light
+    m_phongShader.bindUniform("AmbientColor", m_ambientLight);
+    m_phongShader.bindUniform("LightColor", m_light.color);
+    m_phongShader.bindUniform("LightDirection", m_light.direction);
+    
 
+    // Bind the PVM
+    pvm = a_projectionMatrix * a_viewMatrix * m_bunny.transform;
+    m_phongShader.bindUniform("ProjectionViewModel", pvm);
+
+    // Bind the lighting transforms
+    m_phongShader.bindUniform("ModelMatrix", m_bunny.transform);
+
+
+
+    m_bunny.mesh.draw();
+   
+#pragma endregion
+    
+    // Bind the PVM
+    pvm = a_projectionMatrix * a_viewMatrix * dragon.transform;
+    m_phongShader.bindUniform("ProjectionViewModel", pvm);
+
+    // Bind the lighting transforms
+    m_phongShader.bindUniform("ModelMatrix", dragon.transform);
+
+
+    dragon.mesh.draw();
+    
 }
-
-
-
-
-
 
 
