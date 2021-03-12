@@ -53,12 +53,12 @@ protected:
 
 	struct gameObject
 	{
-		std::string name;
-		aie::OBJMesh mesh;
-		glm::mat4 transform;
-		glm::vec3 position;
-		glm::vec3 scale;
-		glm::vec3 rotation;
+		std::string			name;
+		aie::OBJMesh		mesh;
+		glm::mat4			transform;
+		glm::vec3			position;
+		glm::vec3			scale;
+		glm::vec3			rotation;
 		
 	};
 
@@ -70,14 +70,15 @@ protected:
 	};
 
 
-	struct ImGuiSlider{};
+	
 	
 
 	
-	gameObject* m_bunny;
-	gameObject* m_dragon;
-	gameObject* m_spear;
-	quadObject m_quad;
+	gameObject*				m_bunny;
+	gameObject*				m_dragon;
+	gameObject*				m_spear;
+	gameObject*				m_spear2;
+	quadObject				m_quad;
 	
 
 	// Light Object
@@ -105,6 +106,6 @@ public:
 
 private:
 
-	void DebugUI();
+	void DebugUI(float dt);
 
 };

@@ -182,13 +182,13 @@ void HorizontalSpace(int amount)
 }
 
 // Render IMGUI Debug windows
-void Application3D::DebugUI()
+void Application3D::DebugUI(float dt)
 {
     // Static Variables
   
     static float ambientBrightness;
     static float lightColor[3];
-    
+   
     ImGui::Begin("Inspector View");
     ImGui::SetNextWindowPos({ 0,0 });  
     if (ImGui::CollapsingHeader("LIGHTING"))
@@ -200,8 +200,7 @@ void Application3D::DebugUI()
     }    
     ImGui::Spacing();   
     if (ImGui::CollapsingHeader("OBJECTS"))
-    {
-    	
+    {  	
         ImGui::Text("Select Object");
        
         for (int x = 0; x < m_objects.size(); x++)
@@ -209,19 +208,17 @@ void Application3D::DebugUI()
             if (ImGui::CollapsingHeader(m_objects[x]->name.c_str()))
             {
                 ImGui::BeginChild("");
-                ImGui::DragFloat3("", &m_objects[x]->position[0],0.01,0,10);            
+                ImGui::DragFloat3("Position", &m_objects[x]->position[0],0.01,-10,10);  
+                ImGui::DragFloat3("Scale", &m_objects[x]->scale[0], 0.01, 0, 10);
+                ImGui::DragFloat3("Rotation", &m_objects[x]->rotation[0], 1, -1000, 1000);
                 ImGui::EndChild();
             }
-            
 			m_objects[x]->transform = glm::translate(glm::mat4(1.0f), m_objects[x]->position);
-	        
+            m_objects[x]->transform = glm::scale(m_objects[x]->transform, m_objects[x]->scale);  
+            m_objects[x]->transform = glm::rotate(m_objects[x]->transform, 10.f, glm::normalize(m_objects[x]->rotation));
         }
-
-      
-    
     }
     ImGui::End();
-
 }
 
 
@@ -234,7 +231,7 @@ void Application3D::update(float deltaTime)
 	// query time since application started
 	float time = getTime();
     // Render IMGUI debug
-    DebugUI();
+    DebugUI(deltaTime);
     // rotate camera
 	aie::Input* input = aie::Input::getInstance();
 
@@ -343,24 +340,43 @@ bool Application3D::LoadShaperAndMeshLogic()
     };
     m_quad.name = "floor";
 
-    gameObject* a = new gameObject();
-    a->name = "gey";
-    m_objects.push_back(a);
+    
 
 	// ------------ LOAD SPEAR ------------------------------
     m_spear = new gameObject();
     if (m_spear->mesh.load("./soulspear/soulspear.obj", true, true) == false) { return false; }
     m_spear->name = "Soul Spear";
     m_spear->transform = {
-       0.5f,     0,     0,  0,
-          0,  0.5f,     0,  0,
-          0,     0,  0.5f,  0,
+       1,     0,     0,  0,
+          0,  1,     0,  0,
+          0,     0,  1,  0,
           0,     0,     0,  1
     };
     m_spear->position = { 0,0,0 };
-	
+    m_spear->scale = { 1,1,1 };
+    m_spear->rotation = { 0,1,0 };
     m_objects.push_back(m_spear);
     // ------------------------------------------------------
+
+    // ------------ LOAD SPEAR ------------------------------
+    m_spear2 = new gameObject();
+    if (m_spear2->mesh.load("./soulspear/soulspear.obj", true, true) == false) { return false; }
+    m_spear2->name = "Spear 2";
+    m_spear2->transform = {
+       1,     0,     0,  0,
+          0,  1,     0,  0,
+          0,     0,  1,  0,
+          0,     0,     0,  1
+    };
+    m_spear2->position = { -3,0,-3 };
+    m_spear2->scale = { 1,1,1 };
+    m_spear2->rotation = { 0,0.1,0 };
+    m_objects.push_back(m_spear2);
+    // ------------------------------------------------------
+
+
+
+
     return true;
 }
 
@@ -375,21 +391,28 @@ void Application3D::DrawShaderAndMeshes(glm::mat4 a_projectionMatrix, glm::mat4 
 #pragma region Normal Map
 	
 
-
 	
     m_normalMapShader.bind();
-    pvm = a_projectionMatrix * a_viewMatrix * m_spear->transform;
+    pvm = a_projectionMatrix * a_viewMatrix * m_spear2->transform;
 
     m_normalMapShader.bindUniform("ProjectionViewModel", pvm);
     m_normalMapShader.bindUniform("CameraPosition", m_camera.GetPosition());
     m_normalMapShader.bindUniform("AmbientColor", m_ambientLight);
     m_normalMapShader.bindUniform("LightColor", m_light.color);
 	m_normalMapShader.bindUniform("LightDirection", m_light.direction);
+    m_normalMapShader.bindUniform("ModelMatrix", m_spear2->transform);
+
+    m_spear2->mesh.draw();
+
+    pvm = a_projectionMatrix * a_viewMatrix * m_spear->transform;
+
+    m_normalMapShader.bindUniform("ProjectionViewModel", pvm);
+    m_normalMapShader.bindUniform("CameraPosition", m_camera.GetPosition());
+    m_normalMapShader.bindUniform("AmbientColor", m_ambientLight);
+    m_normalMapShader.bindUniform("LightColor", m_light.color);
+    m_normalMapShader.bindUniform("LightDirection", m_light.direction);
     m_normalMapShader.bindUniform("ModelMatrix", m_spear->transform);
-
-
     m_spear->mesh.draw();
-
 	
 #pragma endregion
 
@@ -405,10 +428,6 @@ void Application3D::DrawShaderAndMeshes(glm::mat4 a_projectionMatrix, glm::mat4 
     m_phongShader.bindUniform("LightDirection", m_light.direction);
     
 #pragma endregion
-
- 
-   
-
 
 #pragma region QUAD
     m_texturedShader.bind();
