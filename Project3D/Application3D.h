@@ -5,6 +5,7 @@
 #include "OBJMesh.h"
 #include "Shader.h"
 #include "Camera.h"
+#include "imgui.h"
 #include <glm/mat4x4.hpp>
 #include <vector>
 
@@ -29,6 +30,8 @@ public:
 protected:
 
 	Camera m_camera;
+	
+	aie::Texture m_gridTexture;
 
 	glm::vec3				pos;
 	glm::mat4				m_viewMatrix;
@@ -42,14 +45,21 @@ protected:
 	aie::ShaderProgram		m_simpleShader;
 	aie::ShaderProgram	    m_bunnyShader;
 	aie::ShaderProgram		m_phongShader;
+	aie::ShaderProgram		m_texturedShader;
+	aie::ShaderProgram		m_normalMapShader;
 	// ============================
 
+	
 
 	struct gameObject
 	{
 		std::string name;
 		aie::OBJMesh mesh;
 		glm::mat4 transform;
+		glm::vec3 position;
+		glm::vec3 scale;
+		glm::vec3 rotation;
+		
 	};
 
 	struct quadObject
@@ -59,8 +69,14 @@ protected:
 		glm::mat4 transform;
 	};
 
+
+	struct ImGuiSlider{};
+	
+
+	
 	gameObject* m_bunny;
 	gameObject* m_dragon;
+	gameObject* m_spear;
 	quadObject m_quad;
 	
 

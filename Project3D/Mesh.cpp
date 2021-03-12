@@ -43,6 +43,13 @@ void Mesh::InitialiseQuad()
 	verticies[4].normal = { 0,1,0,0 };
 	verticies[5].normal = { 0,1,0,0 };
 
+	verticies[0].texCoord = { 0,1 }; // bottom left
+	verticies[1].texCoord = { 1,1 }; // bottom right
+	verticies[2].texCoord = { 0,0 }; // top left
+	verticies[3].texCoord = { 0,0 }; // top left
+	verticies[4].texCoord = { 1,1 }; // bottom right
+	verticies[5].texCoord = { 1,0 }; // top right
+
 	// Fill the vertex buffer
 	glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(Vertex), verticies, GL_STATIC_DRAW);
 	
@@ -55,6 +62,10 @@ void Mesh::InitialiseQuad()
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 4, GL_FLOAT, GL_TRUE, sizeof(Vertex), (void*)1);
 
+	// Enable Third attribute as texture
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)32);
+	
 	// Unbind the buffers
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);

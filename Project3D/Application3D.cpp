@@ -1,4 +1,4 @@
-#include "Application3D.h"
+﻿#include "Application3D.h"
 #include "Gizmos.h"
 #include "Input.h"
 #include "Mesh.h"
@@ -160,7 +160,8 @@ bool Application3D::startup()
 
     m_light.color = { 1, 1,1 };
     m_ambientLight = { 0.25, 0.25, 0.25 };
-
+    
+	
     m_iter = 0;
 	return LoadShaperAndMeshLogic();
 }
@@ -170,73 +171,55 @@ void Application3D::shutdown()
 	Gizmos::destroy();
 }
 
+
+void HorizontalSpace(int amount)
+{
+    for (int x = 0; x < amount; x++)
+    {
+        ImGui::Spacing();
+        ImGui::SameLine();
+    }
+}
+
 // Render IMGUI Debug windows
 void Application3D::DebugUI()
 {
     // Static Variables
-    static float al;
-    static float lightAlpha;
-    static float colors[3];
+  
     static float ambientBrightness;
     static float lightColor[3];
-
-   
-    static float objMove[3];
     
     ImGui::Begin("Inspector View");
-    ImGui::SetNextWindowPos({ 0,0 });
-    // Lighting Settings
-    ImGui::Text("-----------------------");
-
-    ImGui::Text("LIGHTING SETTINGS");
-    ImGui::Text("Color Picker"); ColorPicker(" ", lightColor);
-    ImGui::Text("Ambient Brightness"); ImGui::SliderFloat(" ", &ambientBrightness, 0, 0.25, "");
-    ImGui::Text("Light Direction"); ImGui::SliderFloat3(" ", &m_light.direction[0], -1, 1.f, "");
-    m_light.color = { lightColor[0],lightColor[1],lightColor[2] };
-    m_ambientLight = { ambientBrightness,ambientBrightness,ambientBrightness };
-    // Camera Settings
-    ImGui::Spacing();
-    ImGui::Text("-----------------------");
-
-    ImGui::Text("CAMERA SETTINGS");
-    ImGui::Spacing();
-
-    if (ImGui::Button("Move Left")) xPos = 2;
-    ImGui::SameLine();
-    if (ImGui::Button("Move Right")) xPos = -2;
-    ImGui::SameLine(); 
-    if (ImGui::Button("STOP")) xPos = 0;
-    
-    ImGui::Spacing();
-    ImGui::Text("-----------------------");
-    ImGui::Text("OBJECT TRANSFROM SETTINGS");
-    ImGui::Text("Select Object");
-    ImGui::Text(" << Object Name = %s >> ", m_objects[m_iter]->name.c_str());
-    
-    if (ImGui::Button("Prev"))
+    ImGui::SetNextWindowPos({ 0,0 });  
+    if (ImGui::CollapsingHeader("LIGHTING"))
     {
-        m_iter-=1;
-        if (m_iter < 0)
-            m_iter= 0;
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Next"))
+        ImGui::Text("Color Picker"); ColorPicker(" ", lightColor);
+        ImGui::Text("Light Direction"); ImGui::SliderFloat3(" ", &m_light.direction[0], -1, 1.f, "");
+        m_light.color = { lightColor[0],lightColor[1],lightColor[2] };
+        m_ambientLight = { ambientBrightness,ambientBrightness,ambientBrightness };
+    }    
+    ImGui::Spacing();   
+    if (ImGui::CollapsingHeader("OBJECTS"))
     {
-        m_iter+=1;
-        if (m_iter >= m_objects.size())
-            m_iter -=1;       
+    	
+        ImGui::Text("Select Object");
+       
+        for (int x = 0; x < m_objects.size(); x++)
+        {
+            if (ImGui::CollapsingHeader(m_objects[x]->name.c_str()))
+            {
+                ImGui::BeginChild("");
+                ImGui::DragFloat3("", &m_objects[x]->position[0],0.01,0,10);            
+                ImGui::EndChild();
+            }
+            
+			m_objects[x]->transform = glm::translate(glm::mat4(1.0f), m_objects[x]->position);
+	        
+        }
+
+      
+    
     }
-
-    ImGui::SliderFloat3("",objMove,0.f,1.0f);
-    m_objects[m_iter]->transform += mat4(
-        0, 0, 0, 0,
-        0, 0, 0, 0,
-        0, 0, 0, 0,
-        objMove[0], objMove[1], objMove[2], 0 // x y z w
-    );
-
-   
-   
     ImGui::End();
 
 }
@@ -245,7 +228,9 @@ void Application3D::DebugUI()
 
 void Application3D::update(float deltaTime)
 {
-    m_max = m_objects.size();
+
+
+	
 	// query time since application started
 	float time = getTime();
     // Render IMGUI debug
@@ -309,28 +294,16 @@ void Application3D::draw()
 bool Application3D::LoadShaperAndMeshLogic()
 {
 
-    
+    m_texturedShader.loadShader(aie::eShaderStage::VERTEX,
+        "./shaders/textured.vert");
+    m_texturedShader.loadShader(aie::eShaderStage::FRAGMENT,
+        "./shaders/textured.frag");
+	
+    if (m_texturedShader.link() == false) { printf("Shader Error %s", m_texturedShader.getLastError()); }
+    if (m_gridTexture.load("./textures/numbered_grid.tga") == false) { printf("Error"); return false; }
 
-// Shader loading
-#pragma region Quad
-    // Load the vertex shader from a file
-    m_simpleShader.loadShader(aie::eShaderStage::VERTEX, "./shaders/simple.vert");
-
-
-
-    // Load the fragment shader from a file
-    m_simpleShader.loadShader(aie::eShaderStage::FRAGMENT, "./shaders/simple.frag");
-
-
-
-    if (!m_simpleShader.link())
-    {
-        printf("Simple Shader had an error: %s\n", m_simpleShader.getLastError());
-        return false;
-    }
-
-
-#pragma endregion
+   
+	
 #pragma region Phong Shader
 
     m_phongShader.loadShader(aie::eShaderStage::VERTEX,
@@ -345,102 +318,79 @@ bool Application3D::LoadShaperAndMeshLogic()
     }
 #pragma endregion
 
-#pragma region FlatBunny
-
-    m_bunnyShader.loadShader(aie::eShaderStage::VERTEX, "./shaders/simple.vert");
 
 
-
-    // Load the fragment shader from a file
-    m_bunnyShader.loadShader(aie::eShaderStage::FRAGMENT, "./shaders/simple.frag");
-
-
-
-    if (!m_bunnyShader.link())
-    {
-        printf("Bunny Shader had an error: %s\n", m_bunnyShader.getLastError());
+#pragma region NormalMap
+    m_normalMapShader.loadShader(aie::eShaderStage::VERTEX, "./shaders/normalMap.vert");
+    m_normalMapShader.loadShader(aie::eShaderStage::FRAGMENT, "./shaders/normalMap.frag");
+	if (!m_normalMapShader.link())
+	{
+        printf("Error: %s", m_normalMapShader.getLastError());
         return false;
-    }
-
+	}
+	
+	
 #pragma endregion
 
+     // ------------ LOAD QUAD ---------------------
+    m_quad.mesh.InitialiseQuad();
 
-    Mesh::Vertex vertices[4];
-    vertices[0].position = { -0.5f,0.f, 0.5f,1.f };
-    vertices[1].position = { 0.5f,0.f, 0.5f, 1.f };
-    vertices[2].position = { -0.5, 0.f, -0.5f, 1.f };
-    vertices[3].position = { 0.5f,0.f, -0.5f, 1.f };
-
-    unsigned int indices[6] = { 0,1,2,2,1,3 };
-    //m_quadMesh.InitialiseQuad();
-    m_quad.mesh.Initialise(4, vertices, 6, indices);
-    // We will make the quad 10 units by 10 units 
     m_quad.transform = {
-        10,  0,  0,  0,
-         0, 10,  0,  0,
-         0,  0, 10,  0,
-         0,  0,  0,  1
+    	10,0,0,0,
+    	0,10,0,0,
+    	0,0,10,0,
+    	0,0,0,1
     };
-    m_quad.name = "Simple quad";
+    m_quad.name = "floor";
 
-    m_bunny = new gameObject();
-    if (m_bunny->mesh.load("./stanford/bunny.obj") == false)
-    {
-        printf("Bunny Mesh Failed!\n");
-        return false;
-    }
+    gameObject* a = new gameObject();
+    a->name = "gey";
+    m_objects.push_back(a);
 
-    m_bunny->name = "Bunny";
-    m_bunny->transform = {
-        0.5f,     0,     0,  0,
-           0,  0.5f,     0,  0,
-           0,     0,  0.5f,  0,
-           -3,     0,     0,  1
-    };
-
-    m_objects.push_back(m_bunny);
-    m_dragon = new gameObject();
-    if (m_dragon->mesh.load("./stanford/dragon.obj") == false) 
-    {
-        return false;
-    }
-    m_dragon->name = "Dragon";
-    m_dragon->transform = {
+	// ------------ LOAD SPEAR ------------------------------
+    m_spear = new gameObject();
+    if (m_spear->mesh.load("./soulspear/soulspear.obj", true, true) == false) { return false; }
+    m_spear->name = "Soul Spear";
+    m_spear->transform = {
        0.5f,     0,     0,  0,
           0,  0.5f,     0,  0,
           0,     0,  0.5f,  0,
-          3,     0,     0,  1
+          0,     0,     0,  1
     };
-    m_objects.push_back(m_dragon);
- 
-
+    m_spear->position = { 0,0,0 };
+	
+    m_objects.push_back(m_spear);
+    // ------------------------------------------------------
     return true;
 }
 
 void Application3D::DrawShaderAndMeshes(glm::mat4 a_projectionMatrix, glm::mat4 a_viewMatrix)
 {
     auto pvm = a_projectionMatrix * a_viewMatrix * glm::mat4(0); // PVM = Projection view matrix
-#pragma region Quad Shader
-    //Bind the shader
-    m_simpleShader.bind();
-    pvm = a_projectionMatrix * a_viewMatrix * m_quad.transform;
-    // Bind the transform of the mesh
-    m_simpleShader.bindUniform("ProjectionViewModel", pvm);
 
-    m_simpleShader.bindUniform("randcolor", colorthing);
-    m_quad.mesh.Draw();
-   
-#pragma endregion
 
-#pragma region Bunny Shader
 
-    m_bunnyShader.bind();
-    pvm = a_projectionMatrix * a_viewMatrix * m_bunny->transform;
-    m_bunnyShader.bindUniform("ProjectionViewModel", pvm);
-    
-    m_bunnyShader.bindUniform("randcolor", bunnyColour);
-   // m_bunnyMesh.draw();
 
+
+#pragma region Normal Map
+	
+
+
+	
+    m_normalMapShader.bind();
+    pvm = a_projectionMatrix * a_viewMatrix * m_spear->transform;
+
+    m_normalMapShader.bindUniform("ProjectionViewModel", pvm);
+    m_normalMapShader.bindUniform("CameraPosition", m_camera.GetPosition());
+    m_normalMapShader.bindUniform("AmbientColor", m_ambientLight);
+    m_normalMapShader.bindUniform("LightColor", m_light.color);
+	m_normalMapShader.bindUniform("LightDirection", m_light.direction);
+    m_normalMapShader.bindUniform("ModelMatrix", m_spear->transform);
+
+
+    m_spear->mesh.draw();
+
+	
 #pragma endregion
 
 #pragma region Phong
@@ -456,27 +406,20 @@ void Application3D::DrawShaderAndMeshes(glm::mat4 a_projectionMatrix, glm::mat4 
     
 #pragma endregion
 
-    // Bind the PVM
-    pvm = a_projectionMatrix * a_viewMatrix * m_bunny->transform;
-    m_phongShader.bindUniform("ProjectionViewModel", pvm);
-
-    // Bind the lighting transforms
-    m_phongShader.bindUniform("ModelMatrix", m_bunny->transform);
-    m_bunny->mesh.draw();
-
-    // ------------------------ -----------------------
-
-    // Bind the PVM
-    pvm = a_projectionMatrix * a_viewMatrix * m_dragon->transform;
-    m_phongShader.bindUniform("ProjectionViewModel", pvm);
-
-    // Bind the lighting transforms
-    m_phongShader.bindUniform("ModelMatrix", m_dragon->transform);
-
-    m_dragon->mesh.draw();
+ 
    
+
+
+#pragma region QUAD
+    m_texturedShader.bind();
+    pvm = a_projectionMatrix * a_viewMatrix * m_quad.transform;
+    m_texturedShader.bindUniform("ProjectionViewModel", pvm);
+    m_texturedShader.bindUniform("diffuseTexture", 0);
+    m_gridTexture.bind(0);
+    m_quad.mesh.Draw();
+
     
-   
+#pragma endregion 
 }
 
 
