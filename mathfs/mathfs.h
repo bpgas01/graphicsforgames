@@ -18,7 +18,7 @@ namespace mathfs
 		tVector2(T i, T j);
 		tVector2(const tVector3<T>& v3);
 
-		glm::vec2 vectorToglm() { return glm::vec2(i, j); }
+		//glm::vec2 vectorToglm() { return glm::vec2(i, j); }
 		tVector2 operator  +(const tVector2<T>& v2) const;
 		tVector2 operator  -(const tVector2<T>& v2) const;
 		tVector2 operator  *(float f)               const;

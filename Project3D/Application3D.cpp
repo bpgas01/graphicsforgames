@@ -18,6 +18,7 @@ Application3D::Application3D()
 Application3D::~Application3D()
 {
 }
+
 bool ColorPicker(const char* label, float col[3])
 {
     static const float HUE_PICKER_WIDTH = 20.0f;
@@ -145,6 +146,7 @@ bool ColorPicker(const char* label, float col[3])
     col[2] = color.Value.z;
     return value_changed | ImGui::ColorEdit3(label, col);
 }
+
 bool Application3D::startup()
 {
 	setBackgroundColour(0.25f, 0.25f, 0.25f);
@@ -181,6 +183,21 @@ void HorizontalSpace(int amount)
     }
 }
 
+
+glm::mat4 RotateY(float degree)
+{
+    float rads = glm::radians(degree);
+
+    return glm::mat4(
+        1, 0, 0, 0,
+        0, cos(rads), -sin(rads), 0,
+        0, sin(rads), cos(rads), 0,
+        0, 0, 0, 0
+        );
+
+}
+
+
 // Render IMGUI Debug windows
 void Application3D::DebugUI(float dt)
 {
@@ -207,15 +224,15 @@ void Application3D::DebugUI(float dt)
         {
             if (ImGui::CollapsingHeader(m_objects[x]->name.c_str()))
             {
-                ImGui::BeginChild("");
+                ImGui::BeginChild("a");
                 ImGui::DragFloat3("Position", &m_objects[x]->position[0],0.01,-10,10);  
                 ImGui::DragFloat3("Scale", &m_objects[x]->scale[0], 0.01, 0, 10);
-                ImGui::DragFloat3("Rotation", &m_objects[x]->rotation[0], 1, -1000, 1000);
+               // ImGui::DragFloat3("Rotation", &m_objects[x]->rotation[0], 1, -1000, 1000);
                 ImGui::EndChild();
             }
 			m_objects[x]->transform = glm::translate(glm::mat4(1.0f), m_objects[x]->position);
             m_objects[x]->transform = glm::scale(m_objects[x]->transform, m_objects[x]->scale);  
-            m_objects[x]->transform = glm::rotate(m_objects[x]->transform, 10.f, glm::normalize(m_objects[x]->rotation));
+
         }
     }
     ImGui::End();
@@ -354,7 +371,7 @@ bool Application3D::LoadShaperAndMeshLogic()
     };
     m_spear->position = { 0,0,0 };
     m_spear->scale = { 1,1,1 };
-    m_spear->rotation = { 0,1,0 };
+   
     m_objects.push_back(m_spear);
     // ------------------------------------------------------
 
@@ -370,7 +387,7 @@ bool Application3D::LoadShaperAndMeshLogic()
     };
     m_spear2->position = { -3,0,-3 };
     m_spear2->scale = { 1,1,1 };
-    m_spear2->rotation = { 0,0.1,0 };
+ 
     m_objects.push_back(m_spear2);
     // ------------------------------------------------------
 
