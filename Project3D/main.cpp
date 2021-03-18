@@ -6,7 +6,7 @@ int main()
 	auto app = new Application3D();
 
 	// initialise and loop
-	app->run("AIE", 800, 800, false);
+	app->run("AIE", 1000, 800, false);
 
 	// deallocation
 	delete app;

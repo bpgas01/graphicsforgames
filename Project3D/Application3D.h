@@ -6,6 +6,7 @@
 #include "Shader.h"
 #include "Camera.h"
 #include "imgui.h"
+#include "Scene.h"
 #include <glm/mat4x4.hpp>
 #include <vector>
 
@@ -71,7 +72,7 @@ protected:
 
 
 	
-	
+	Scene* m_scene;
 
 	
 	gameObject*				m_bunny;
@@ -82,14 +83,14 @@ protected:
 	
 
 	// Light Object
-	struct Light
+	/*struct Light
 	{
 		glm::vec3			direction;
 		glm::vec3			color;
 	};
 
 	Light					m_light;
-	glm::vec3				m_ambientLight;
+	glm::vec3				m_ambientLight;*/
 	glm::vec3				diffuseVec;
 	float					xPos = 0;
 	float					yPos = 0;
@@ -101,8 +102,8 @@ protected:
 
 public:
 
-	bool LoadShaperAndMeshLogic();
-	void DrawShaderAndMeshes(glm::mat4, glm::mat4);
+	bool LoadShaperAndMeshLogic(Light a_light);
+	//void DrawShaderAndMeshes(glm::mat4, glm::mat4);
 
 private:
 

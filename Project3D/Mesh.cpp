@@ -141,8 +141,6 @@ void Mesh::Initialise(unsigned int a_vertexCount, const Vertex* a_vertices, unsi
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-
-
 void Mesh::Draw()
 {
 
