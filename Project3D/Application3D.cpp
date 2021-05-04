@@ -177,6 +177,7 @@ bool Application3D::startup()
     Light light;
     light.m_color = { 1, 1,1 };
     light.m_direction = { 1,-1,1 };
+   
 
     m_iter = 0;
 	return LoadShaperAndMeshLogic(light);
@@ -185,7 +186,7 @@ bool Application3D::startup()
 void Application3D::shutdown()
 {
 	Gizmos::destroy();
-    delete m_scene;
+    //delete m_scene;
 }
 
 
@@ -318,7 +319,7 @@ void Application3D::draw()
     for (auto i : m_scene->GetPointLights()) 
     {
         glm::vec4 temp(i.m_color.r, i.m_color.g, i.m_color.b, 1);
-        Gizmos::addSphere(i.m_direction, 1.0f, 10, 10, temp);
+        Gizmos::addSphere(i.m_direction, 0.1f, 10, 10, temp);
     }
 
     // Add particle Effects here
@@ -436,13 +437,13 @@ bool Application3D::LoadShaperAndMeshLogic(Light a_light)
           0,0,1,0,
           0,0,0,1
     };
-    m_dragon->scale = { 1,1,1 };
+    m_dragon->scale = { 0.5,0.5,0.5 };
     m_dragon->position = { -1,1,1 };
  
     // ------------ LOAD GUN ---------------------------
 
     m_futureGun = new gameObject();
-    if (m_futureGun->mesh.load("./future_gun/gun_model.obj") == false) { printf("Failure loading gun"); return false; }
+    if (m_futureGun->mesh.load("./M1_carbine/M1_carbine.obj", true, true) == false) { printf("Failure loading gun"); return false; }
     m_futureGun->name = "Gun";
     m_futureGun->transform = {
           1,0,0,0,
@@ -450,8 +451,8 @@ bool Application3D::LoadShaperAndMeshLogic(Light a_light)
           0,0,1,0,
           0,0,0,1
     };
-    m_futureGun->scale = { 1,1,1 };
-    m_futureGun->position = { -1,1,1 };
+    m_futureGun->scale = { 0.2,0.2,0.2};
+    m_futureGun->position = { -5,2,5 };
     // ------------------------------------------------
 
     m_scene = new Scene(m_camera, glm::vec2(getWindowWidth(), getWindowHeight()), a_light, glm::vec3(0.03f));
@@ -489,8 +490,8 @@ bool Application3D::LoadShaperAndMeshLogic(Light a_light)
 
 #pragma endregion
 
-    m_scene->GetPointLights().push_back(Light(vec3(5, 3, 0), vec3(1, 0, 0), 50)); // red
-    m_scene->GetPointLights().push_back(Light(vec3(-5, 3, 0), vec3(0, 1, 0), 50)); // green
+    m_scene->GetPointLights().push_back(Light(vec3(5, 3, 5), vec3(1, 0, 0), 100)); // red
+    m_scene->GetPointLights().push_back(Light(vec3(-5, 3, -5), vec3(0, 1, 0), 50)); // green
 
     m_scene->GetPointLights().push_back(Light(vec3(0, 5, 0), vec3(1, 1, 1), 30)); // dynamic
 

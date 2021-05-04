@@ -9,6 +9,7 @@
 #include <Texture.h>
 #include <Application.h>
 #include <glm/ext.hpp>
+#include <iostream>
 
 Instance::Instance(glm::mat4 a_transform, aie::OBJMesh* a_mesh, aie::ShaderProgram* a_shader)
 	: m_transform(a_transform), m_mesh(a_mesh), m_shader(a_shader)
@@ -53,7 +54,8 @@ void Instance::Draw(Scene* scene)
 	// Get total number of scene lights. 
 	// so models can be effected by multiple lights + blending
 	int numofLights = scene->GetNumOfLights();
-	m_shader->bindUniform("numOfLights", numofLights);
+	std::cout << numofLights << std::endl;
+	m_shader->bindUniform("numLights", numofLights);
 	m_shader->bindUniform("PointLightPosition", numofLights, scene->GetPointLightPos());
 	m_shader->bindUniform("PointLightColor", numofLights, scene->GetPointLightColor());
 
