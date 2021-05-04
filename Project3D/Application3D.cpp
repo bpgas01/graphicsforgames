@@ -168,14 +168,16 @@ bool Application3D::startup()
 		getWindowWidth() / (float)getWindowHeight(),
 		0.1f, 1000.f);
 
+    // Create new camera and set it to the default (Camera 0)
+    m_camera = new Camera(0, glm::vec3(0, 3, -0.6));
+
+    // To do
+    // 1. create particle system
 
     Light light;
-	
     light.m_color = { 1, 1,1 };
     light.m_direction = { 1,-1,1 };
 
-	
-	
     m_iter = 0;
 	return LoadShaperAndMeshLogic(light);
 }
@@ -183,6 +185,7 @@ bool Application3D::startup()
 void Application3D::shutdown()
 {
 	Gizmos::destroy();
+    delete m_scene;
 }
 
 
@@ -266,6 +269,7 @@ void Application3D::update(float deltaTime)
 
     m_viewMatrix = glm::lookAt(vec3(glm::sin(xPos * time) * 10, 10, glm::cos(xPos * time) * 10),
         vec3(0), vec3(0, 1, 0));
+
 	// wipe the gizmos clean for this frame
 	Gizmos::clear();
 
@@ -282,17 +286,20 @@ void Application3D::update(float deltaTime)
 			i == 10 ? white : black);
 	}
 
+    // rotate light around using application time as the delta time
+    m_scene->GetLight().m_direction = glm::normalize(glm::vec3(glm::cos(time * 2), glm::sin(time * 2), 0));
 	// add a transform so that we can see the axis
 	Gizmos::addTransform(mat4(1));
     for(auto* object : m_scene->getList())
     {
         object->DecomposeMatrix();
         rotate(object->m_transform, time, vec3(0,1,0));
-  
     }
     
+    m_camera->Update(deltaTime);
+    // Check for Function key logic to change cameras
+    SwitchCameraLogic();
 	
-    m_camera.Update(deltaTime);
 
 	// quit if we press escape
 
@@ -305,10 +312,22 @@ void Application3D::draw()
 	// wipe the screen to the background colour
 	clearScreen();
 
-    glm::mat4 projectionMatrix = m_camera.GetProjectionMatrix((float)getWindowWidth(), (float)getWindowHeight());
+    glm::mat4 projectionMatrix = m_camera->GetProjectionMatrix((float)getWindowWidth(), (float)getWindowHeight());
+    glm::mat4 viewMatrix = m_camera->GetViewMatrix();
 
-    glm::mat4 viewMatrix = m_camera.GetViewMatrix();
+    for (auto i : m_scene->GetPointLights()) 
+    {
+        glm::vec4 temp(i.m_color.r, i.m_color.g, i.m_color.b, 1);
+        Gizmos::addSphere(i.m_direction, 1.0f, 10, 10, temp);
+    }
 
+    // Add particle Effects here
+    // bind particle shaders to temp matrix and draw
+
+    Light sunLight = m_scene->GetLight();
+    glm::vec4 sunColor(sunLight.m_color.r, sunLight.m_color.g, sunLight.m_color.b, 1);
+    Gizmos::addLine({ 0,0,0 }, sunLight.m_direction * 4.0f, sunColor);
+    
 	// update perspective in case window resized
 	m_projectionMatrix = glm::perspective(glm::pi<float>() * 0.25f,
 		getWindowWidth() / (float)getWindowHeight(),
@@ -322,61 +341,77 @@ void Application3D::draw()
 	
 }
 
+void Application3D::SwitchCameraLogic()
+{
+    aie::Input* input = aie::Input::getInstance();
+
+    if (input->isKeyDown(aie::INPUT_KEY_F1))
+    {
+        m_scene->ChangeCamera(0); // default moving camera
+    }
+    else if (input->isKeyDown(aie::INPUT_KEY_F2))
+    {
+        m_scene->ChangeCamera(1); // Stationary front
+    }
+    else if (input->isKeyDown(aie::INPUT_KEY_F3))
+    {
+        m_scene->ChangeCamera(2); // Stationary top
+    }
+    else if (input->isKeyDown(aie::INPUT_KEY_F4))
+    {
+        m_scene->ChangeCamera(3); // stationary side
+    }
+    else if (input->isKeyDown(aie::INPUT_KEY_F5))
+    {
+        m_scene->ChangeCamera(4); // othographic diagonal
+    }
+
+    m_camera = m_scene->getCamera(); // Set camera to current
+
+
+}
+
 bool Application3D::LoadShaperAndMeshLogic(Light a_light)
 {
 
-    m_texturedShader.loadShader(aie::eShaderStage::VERTEX,
-        "./shaders/textured.vert");
-    m_texturedShader.loadShader(aie::eShaderStage::FRAGMENT,
-        "./shaders/textured.frag");
-	
+#pragma region Shadersss
+
+
+    // load particle shaders
+
+
+    // Load Textured shaders
+    m_texturedShader.loadShader(aie::eShaderStage::VERTEX, "./shaders/textured.vert");
+    m_texturedShader.loadShader(aie::eShaderStage::FRAGMENT, "./shaders/textured.frag");
     if (m_texturedShader.link() == false) { printf("Shader Error %s", m_texturedShader.getLastError()); }
     if (m_gridTexture.load("./textures/numbered_grid.tga") == false) { printf("Error"); return false; }
 
-   
-	
-#pragma region Phong Shader
+    // Load Phong Shader
+    m_phongShader.loadShader(aie::eShaderStage::VERTEX, "./shaders/phong.vert");
+    m_phongShader.loadShader(aie::eShaderStage::FRAGMENT, "./shaders/phong.frag");
+    if (m_phongShader.link() == false) { printf("Phong Shader failed to load. Error: %s\n", m_phongShader.getLastError()); return false; }
 
-    m_phongShader.loadShader(aie::eShaderStage::VERTEX,
-        "./shaders/phong.vert");
-    m_phongShader.loadShader(aie::eShaderStage::FRAGMENT,
-        "./shaders/phong.frag");
-
-    if (m_phongShader.link() == false)
-    {
-        printf("Phong Shader failed to load. Error: %s\n", m_phongShader.getLastError());
-        return false;
-    }
-#pragma endregion
-
-
-
-#pragma region NormalMap
+    // Load Normal Map Shader
     m_normalMapShader.loadShader(aie::eShaderStage::VERTEX, "./shaders/normalMap.vert");
     m_normalMapShader.loadShader(aie::eShaderStage::FRAGMENT, "./shaders/normalMap.frag");
-	if (!m_normalMapShader.link())
-	{
-        printf("Error: %s", m_normalMapShader.getLastError());
-        return false;
-	}
-	
-	
+    if (!m_normalMapShader.link()) { printf("Error: %s", m_normalMapShader.getLastError()); return false; }
+
 #pragma endregion
 
-     // ------------ LOAD QUAD ---------------------
+#pragma region Mesh
+
+    // ------------ LOAD QUAD ---------------------
     m_quad.mesh.InitialiseQuad();
 
     m_quad.transform = {
-    	10,0,0,0,
-    	0,10,0,0,
-    	0,0,10,0,
-    	0,0,0,1
+        10,0,0,0,
+        0,10,0,0,
+        0,0,10,0,
+        0,0,0,1
     };
     m_quad.name = "floor";
 
-    
-
-	// ------------ LOAD SPEAR ------------------------------
+    // ------------ LOAD SPEAR ------------------------------
     m_spear = new gameObject();
     if (m_spear->mesh.load("./soulspear/soulspear.obj", true, true) == false) { return false; }
     m_spear->name = "Soul Spear";
@@ -388,95 +423,77 @@ bool Application3D::LoadShaperAndMeshLogic(Light a_light)
     };
     m_spear->position = { 0,0,0 };
     m_spear->scale = { 1,1,1 };
-   
+
     m_objects.push_back(m_spear);
-    // ------------------------------------------------------
+  
+    // ------------ LOAD DRAGON -----------------------------
+    m_dragon = new gameObject();
+    if (m_dragon->mesh.load("./stanford/Dragon.obj") == false) { return false; }
+    m_dragon->name = "Dragon";
+    m_dragon->transform = {
+          1,0,0,0,
+          0,1,0,0,
+          0,0,1,0,
+          0,0,0,1
+    };
+    m_dragon->scale = { 1,1,1 };
+    m_dragon->position = { -1,1,1 };
+ 
+    // ------------ LOAD GUN ---------------------------
 
+    m_futureGun = new gameObject();
+    if (m_futureGun->mesh.load("./future_gun/gun_model.obj") == false) { printf("Failure loading gun"); return false; }
+    m_futureGun->name = "Gun";
+    m_futureGun->transform = {
+          1,0,0,0,
+          0,1,0,0,
+          0,0,1,0,
+          0,0,0,1
+    };
+    m_futureGun->scale = { 1,1,1 };
+    m_futureGun->position = { -1,1,1 };
+    // ------------------------------------------------
+
+    m_scene = new Scene(m_camera, glm::vec2(getWindowWidth(), getWindowHeight()), a_light, glm::vec3(0.03f));
     
+    // Stationary Cameras
+    Camera* stationary_front = new Camera(1, glm::vec3(0.0f, 2.0f, 15.0f));
+    // add - stationary_front->Stationary(true);
+    m_scene->AddCamera(stationary_front);
 
-    m_scene = new Scene(&m_camera, glm::vec2(getWindowWidth(), getWindowHeight()), a_light,glm::vec3(0.03f));
+    Camera* stationary_right = new Camera(2, glm::vec3(15.0f, 2.0f, 0.0f));
+    m_scene->AddCamera(stationary_right);
 
-	for (int i= 0; i < 10;i++)
-	{
-        m_scene->AddInstances(new Instance(
-            glm::vec3(i * 2, 0, 0),
-            glm::vec3(0, i * 30, 0),
-            glm::vec3(1,1,1),
-            &m_spear->mesh, &m_normalMapShader));
-	}
+    Camera* stationary_top = new Camera(3, glm::vec3(0.0f, 15.0f, 0.0f));
+    m_scene->AddCamera(stationary_top);
 
-    // Red on left
-    m_scene->GetPointLights().push_back(Light(vec3(5, 3, 0), vec3(1, 0, 0), 50));
-//    m_scene->GetPointLights().push_back(Light(vec3(5, 3, 0), vec3(1, 0, 0), 50));
+    m_scene->AddCamera(m_camera);
 
-	// Green on right5
-	m_scene->GetPointLights().push_back(Light(vec3(-5, 3, 0), vec3(0, 1, 0), 50));
+    // Add gameObjects to new instances
+    m_scene->AddInstances(new Instance(m_dragon->position, glm::vec3(0, 0, 0), m_dragon->scale, &m_dragon->mesh, &m_phongShader));
+    m_scene->AddInstances(new Instance(m_futureGun->position, glm::vec3(0, 0, 0), m_futureGun->scale, &m_futureGun->mesh, &m_normalMapShader));
 
+    for (int i = 0; i < 10; i++)
+    {
+        if (i % 2 == 0)
+        {
+            m_scene->AddInstances(new Instance(glm::vec3(i * 2, 0, 0), glm::vec3(0, 90, 0),
+                glm::vec3(1), &m_spear->mesh, &m_normalMapShader));
+        }
+        else
+        {
+            m_scene->AddInstances(new Instance(glm::vec3(i * 2, 0, 0), glm::vec3(0, 0, 0),
+                glm::vec3(1), &m_spear->mesh, &m_normalMapShader));
+        }
+    }
 
-	
+#pragma endregion
 
-    return true;
+    m_scene->GetPointLights().push_back(Light(vec3(5, 3, 0), vec3(1, 0, 0), 50)); // red
+    m_scene->GetPointLights().push_back(Light(vec3(-5, 3, 0), vec3(0, 1, 0), 50)); // green
+
+    m_scene->GetPointLights().push_back(Light(vec3(0, 5, 0), vec3(1, 1, 1), 30)); // dynamic
+
+    return true; // All loads correctly
 }
-
-//void Application3D::DrawShaderAndMeshes(glm::mat4 a_projectionMatrix, glm::mat4 a_viewMatrix)
-//{
-//    auto pvm = a_projectionMatrix * a_viewMatrix * glm::mat4(0); // PVM = Projection view matrix
-//
-//
-//
-//
-//
-//#pragma region Normal Map
-//	
-//
-//	
-//    m_normalMapShader.bind();
-//    pvm = a_projectionMatrix * a_viewMatrix * m_spear2->transform;
-//
-//    m_normalMapShader.bindUniform("ProjectionViewModel", pvm);
-//    m_normalMapShader.bindUniform("CameraPosition", m_camera.GetPosition());
-//    m_normalMapShader.bindUniform("AmbientColor", m_ambientLight);
-//    m_normalMapShader.bindUniform("LightColor", m_light.color);
-//	m_normalMapShader.bindUniform("LightDirection", m_light.direction);
-//    m_normalMapShader.bindUniform("ModelMatrix", m_spear2->transform);
-//
-//    m_spear2->mesh.draw();
-//
-//    pvm = a_projectionMatrix * a_viewMatrix * m_spear->transform;
-//
-//    m_normalMapShader.bindUniform("ProjectionViewModel", pvm);
-//    m_normalMapShader.bindUniform("CameraPosition", m_camera.GetPosition());
-//    m_normalMapShader.bindUniform("AmbientColor", m_ambientLight);
-//    m_normalMapShader.bindUniform("LightColor", m_light.color);
-//    m_normalMapShader.bindUniform("LightDirection", m_light.direction);
-//    m_normalMapShader.bindUniform("ModelMatrix", m_spear->transform);
-//    m_spear->mesh.draw();
-//	
-//#pragma endregion
-//
-//#pragma region Phong
-//    // Bind the shader
-//    m_phongShader.bind();
-//    
-//    // Bind the Camera Position
-//    m_phongShader.bindUniform("CameraPosition", vec3(glm::inverse(a_viewMatrix)[3]));
-//    // Bind the Light
-//    m_phongShader.bindUniform("AmbientColor", m_ambientLight);
-//    m_phongShader.bindUniform("LightColor", m_light.color);
-//    m_phongShader.bindUniform("LightDirection", m_light.direction);
-//    
-//#pragma endregion
-//
-//#pragma region QUAD
-//    m_texturedShader.bind();
-//    pvm = a_projectionMatrix * a_viewMatrix * m_quad.transform;
-//    m_texturedShader.bindUniform("ProjectionViewModel", pvm);
-//    m_texturedShader.bindUniform("diffuseTexture", 0);
-//    m_gridTexture.bind(0);
-//    m_quad.mesh.Draw();
-//
-//    
-//#pragma endregion 
-//}
-//
 

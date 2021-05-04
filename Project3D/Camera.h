@@ -6,6 +6,13 @@ class Camera
 public:
 
 	Camera();
+	Camera(int a_camera, glm::vec3 a_position) : m_camera(a_camera), m_position(a_position) 
+	{
+		m_phi = 0;
+		m_theta = 0;
+		lastMouseX = 0;
+		lastMouseY = 0;
+	};
 	~Camera() {};
 
 	void Update(float a_deltaTime);
@@ -15,9 +22,10 @@ public:
 	glm::mat4 GetViewMatrix();
 	glm::mat4 GetProjectionMatrix(float width, float height);
 
-
+	int GetCamera() { return m_camera; }
+	void SetCamera(int a_camera) { m_camera = a_camera; }
 private:
-
+	int m_camera;
 	float m_theta; // In Degrees
 	float m_phi; // In Degrees 
 	

@@ -2,6 +2,9 @@
 #include <list>
 #include <vector>
 #include  <glm/glm.hpp>
+#include <glm/ext.hpp>
+#include "Camera.h"
+#include "imgui.h"
 
 
 class Camera;
@@ -35,18 +38,23 @@ public:
 	Scene(Camera* camera, glm::vec2 windowSize, Light& light, glm::vec3 ambientLight);
 	~Scene();
 
+	void AddCamera(Camera* a_camera);
+	void ChangeCamera(int cam);
 	void AddInstances(Instance* instance);
 	void Draw();
+
+
+	
 
 	Camera* getCamera()
 	{
 		return m_camera;
 	}
-	
 	glm::vec2 GetWindowSize()
 	{
 		return m_windowSize;
 	}
+
 	Light& GetLight()
 	{
 		return m_light;
@@ -56,19 +64,22 @@ public:
 		return m_ambientLight;
 	}
 
-
 	int GetNumOfLights() { return (int)m_pointLights.size(); }
 	
 	std::list<Instance*> getList() { return m_instances; }
-	// getters for vecs and vectorLists
-
+	
 	glm::vec3* GetPointLightPos() { return &m_pointLightPositions[0]; }
 	glm::vec3* GetPointLightColor() { return &m_pointLightColors[0]; }
 	std::vector<Light>& GetPointLights() { return m_pointLights; }
 
 
+
 protected:
+	bool DebugColorUI(const char* label, float col[3]);
+	void DebugUI();
+
 	Camera* m_camera;
+	std::vector<Camera*> m_cameraList;
 	glm::vec2 m_windowSize;
 	Light m_light;
 
@@ -77,6 +88,7 @@ protected:
 	
 	glm::vec3 m_pointLightPositions[MAX_LIGHTS];
 	glm::vec3 m_pointLightColors[MAX_LIGHTS];
+
 	glm::vec3 m_ambientLight;
 	std::list<Instance*> m_instances;
 	

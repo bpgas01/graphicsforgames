@@ -1,11 +1,15 @@
 #include "Camera.h"
 #include <glm/ext.hpp>
 #include <Input.h>
+
 Camera::Camera()
 {
 	m_position = glm::vec3(0, 2, -10);
 	m_phi = 0;
 	m_theta = 0;
+	m_camera = 0;
+	lastMouseY = 0;
+	lastMouseX = 0;
 }
 
 void Camera::Update(float a_deltaTime)

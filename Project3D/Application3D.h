@@ -3,10 +3,12 @@
 #include "Application.h"
 #include "Mesh.h"
 #include "OBJMesh.h"
+#include "imgui.h"
+
 #include "Shader.h"
 #include "Camera.h"
-#include "imgui.h"
 #include "Scene.h"
+
 #include <glm/mat4x4.hpp>
 #include <vector>
 
@@ -23,6 +25,8 @@ public:
 	virtual void update(float deltaTime);
 	virtual void draw();
 
+	void SwitchCameraLogic();
+
 	float z = 0.03;
 	float b = 2;
 	float x = 0.01;
@@ -30,7 +34,7 @@ public:
 	
 protected:
 
-	Camera m_camera;
+	Camera* m_camera;
 	
 	aie::Texture m_gridTexture;
 
@@ -48,9 +52,8 @@ protected:
 	aie::ShaderProgram		m_phongShader;
 	aie::ShaderProgram		m_texturedShader;
 	aie::ShaderProgram		m_normalMapShader;
+	aie::ShaderProgram		m_particleShader;
 	// ============================
-
-	
 
 	struct gameObject
 	{
@@ -79,18 +82,11 @@ protected:
 	gameObject*				m_dragon;
 	gameObject*				m_spear;
 	gameObject*				m_spear2;
+	gameObject*				m_futureGun;
 	quadObject				m_quad;
 	
 
-	// Light Object
-	/*struct Light
-	{
-		glm::vec3			direction;
-		glm::vec3			color;
-	};
-
-	Light					m_light;
-	glm::vec3				m_ambientLight;*/
+	
 	glm::vec3				diffuseVec;
 	float					xPos = 0;
 	float					yPos = 0;
@@ -103,7 +99,7 @@ protected:
 public:
 
 	bool LoadShaperAndMeshLogic(Light a_light);
-	//void DrawShaderAndMeshes(glm::mat4, glm::mat4);
+	
 
 private:
 

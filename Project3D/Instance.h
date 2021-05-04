@@ -19,14 +19,17 @@ class Instance
 {
 
 public:
-
+	// Contructors + overloads for Instance Classes
 	Instance(glm::mat4 a_transform, aie::OBJMesh* a_mesh, aie::ShaderProgram* a_shader);
 	Instance(glm::vec3 a_position, glm::vec3 a_eulerAngles, glm::vec3 a_scale, aie::OBJMesh* a_mesh, aie::ShaderProgram* a_shader);
 
+	// Draw Scene object
 	void Draw(Scene* scene);
 
+	 // Creating transform object from matrix3 data
 	 glm::mat4 MakeTransform(glm::vec3 a_position, glm::vec3 a_eulerAngles, glm::vec3 a_scale);
 
+	 
 	 void DecomposeMatrix()
 	 {
 		 glm::decompose(m_transform, scale, rotation, translation, skew, perspective);
@@ -41,6 +44,7 @@ public:
 	glm::vec4 GetPerspective() const { return perspective; }
 
 	glm::mat4 m_transform;
+	glm::vec3 m_rotation;
 
 protected:
 
