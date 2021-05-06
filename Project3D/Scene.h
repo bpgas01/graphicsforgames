@@ -71,7 +71,7 @@ public:
 	glm::vec3* GetPointLightPos() { return &m_pointLightPositions[0]; }
 	glm::vec3* GetPointLightColor() { return &m_pointLightColors[0]; }
 	std::vector<Light>& GetPointLights() { return m_pointLights; }
-
+	std::vector<Camera*> GetCameras() { return m_cameraList; }
 
 
 protected:

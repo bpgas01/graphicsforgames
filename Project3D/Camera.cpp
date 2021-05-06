@@ -23,37 +23,38 @@ void Camera::Update(float a_deltaTime)
 	glm::vec3 right(-glm::sin(thetaR), 0, glm::cos(thetaR));
 	glm::vec3 up(0, 1, 0);
 
-
-	// Input Settings
-	if (input->isKeyDown(aie::INPUT_KEY_X)) m_position += up * a_deltaTime * 3.5f;
-	
-	if (input->isKeyDown(aie::INPUT_KEY_Z)) m_position -= up * a_deltaTime * 3.5f;
-	
-	if (input->isKeyDown(aie::INPUT_KEY_A)) m_position -= right * a_deltaTime * 3.5f;
-
-	if (input->isKeyDown(aie::INPUT_KEY_D)) m_position += right * a_deltaTime * 3.5f;
-	
-	if (input->isKeyDown(aie::INPUT_KEY_W)) m_position += forward * a_deltaTime * 3.5f;
-	
-	if (input->isKeyDown(aie::INPUT_KEY_S)) m_position -= forward * a_deltaTime * 3.5f;
-	
-	// -----
-	// Get current position of mouse coordiniates
-	float mX = input->getMouseX();
-	float mY = input->getMouseY();
-	const float turnSpeed = glm::radians(180.f);
-
-	// IF the right button is down, increment theta and phi
-	if (input->isMouseButtonDown(aie::INPUT_MOUSE_BUTTON_RIGHT))
+	if (!m_isStationary)
 	{
-		m_theta += turnSpeed * (mX - lastMouseX) * a_deltaTime * 3;
-		m_phi += turnSpeed * (mY - lastMouseY) * a_deltaTime * 3;
+		// Input Settings
+		if (input->isKeyDown(aie::INPUT_KEY_X)) m_position += up * a_deltaTime * 3.5f;
+
+		if (input->isKeyDown(aie::INPUT_KEY_Z)) m_position -= up * a_deltaTime * 3.5f;
+
+		if (input->isKeyDown(aie::INPUT_KEY_A)) m_position -= right * a_deltaTime * 3.5f;
+
+		if (input->isKeyDown(aie::INPUT_KEY_D)) m_position += right * a_deltaTime * 3.5f;
+
+		if (input->isKeyDown(aie::INPUT_KEY_W)) m_position += forward * a_deltaTime * 3.5f;
+
+		if (input->isKeyDown(aie::INPUT_KEY_S)) m_position -= forward * a_deltaTime * 3.5f;
+
+		// -----
+		// Get current position of mouse coordiniates
+		float mX = input->getMouseX();
+		float mY = input->getMouseY();
+		const float turnSpeed = glm::radians(180.f);
+
+		// IF the right button is down, increment theta and phi
+		if (input->isMouseButtonDown(aie::INPUT_MOUSE_BUTTON_RIGHT))
+		{
+			m_theta += turnSpeed * (mX - lastMouseX) * a_deltaTime * 3;
+			m_phi += turnSpeed * (mY - lastMouseY) * a_deltaTime * 3;
+		}
+
+		// Now store the last values
+		lastMouseX = mX;
+		lastMouseY = mY;
 	}
-
-	// Now store the last values
-	lastMouseX = mX;
-	lastMouseY = mY;
-
 }
 
 glm::mat4 Camera::GetViewMatrix()

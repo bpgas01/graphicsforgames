@@ -321,6 +321,12 @@ void Application3D::draw()
         glm::vec4 temp(i.m_color.r, i.m_color.g, i.m_color.b, 1);
         Gizmos::addSphere(i.m_direction, 0.1f, 10, 10, temp);
     }
+	for (auto i : m_scene->GetCameras())
+	{
+		
+		Gizmos::addSphere(i->GetPosition(), 0.03f, 10,10, glm::vec4(1,1,1,1));
+		
+	}
 
     // Add particle Effects here
     // bind particle shaders to temp matrix and draw
@@ -458,14 +464,19 @@ bool Application3D::LoadShaperAndMeshLogic(Light a_light)
     m_scene = new Scene(m_camera, glm::vec2(getWindowWidth(), getWindowHeight()), a_light, glm::vec3(0.03f));
     
     // Stationary Cameras
-    Camera* stationary_front = new Camera(1, glm::vec3(0.0f, 2.0f, 15.0f));
-    // add - stationary_front->Stationary(true);
-    m_scene->AddCamera(stationary_front);
-
-    Camera* stationary_right = new Camera(2, glm::vec3(15.0f, 2.0f, 0.0f));
+    auto* stationary_front = new Camera(1, glm::vec3(0.0f, 2.0f, 15.0f));
+    stationary_front->SetStationary(true);
+    stationary_front->SetRotation(glm::vec2(-90, 0));
+	m_scene->AddCamera(stationary_front);
+    
+    auto* stationary_right = new Camera(2, glm::vec3(0.0f, 2.0f, -20.0f));
+    stationary_right->SetStationary(true);
+    stationary_right->SetRotation(glm::vec2(90, 0));
     m_scene->AddCamera(stationary_right);
 
-    Camera* stationary_top = new Camera(3, glm::vec3(0.0f, 15.0f, 0.0f));
+    auto* stationary_top = new Camera(3, glm::vec3(0.0f, 30.0f, 0.0f));
+    stationary_top->SetStationary((true));
+    stationary_top->SetRotation(glm::vec2(0, -90));
     m_scene->AddCamera(stationary_top);
 
     m_scene->AddCamera(m_camera);

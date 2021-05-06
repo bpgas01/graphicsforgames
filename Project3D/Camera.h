@@ -20,6 +20,12 @@ public:
 	void SetPosition( const glm::vec3 a_position) { m_position = a_position; }
 
 	void SetStationary( const bool a_state) { m_isStationary = a_state; }
+	void SetRotation(const glm::vec2 rotation)
+	{
+		m_rotation = rotation;
+		m_theta = m_rotation.x;
+		m_phi = m_rotation.y;
+	}
 	
 	glm::mat4 GetViewMatrix();
 	glm::mat4 GetProjectionMatrix(float width, float height);
@@ -33,7 +39,8 @@ private:
 	float m_phi; // In Degrees 
 	
 	glm::vec3 m_position;
-
+	glm::vec2 m_rotation;
+	
 	float lastMouseX, 
 		  lastMouseY;
 
