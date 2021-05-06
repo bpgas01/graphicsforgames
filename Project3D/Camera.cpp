@@ -25,17 +25,17 @@ void Camera::Update(float a_deltaTime)
 
 
 	// Input Settings
-	if (input->isKeyDown(aie::INPUT_KEY_X)) m_position += up * a_deltaTime * 3.f;
+	if (input->isKeyDown(aie::INPUT_KEY_X)) m_position += up * a_deltaTime * 3.5f;
 	
-	if (input->isKeyDown(aie::INPUT_KEY_Z)) m_position -= up * a_deltaTime * 3.f;
+	if (input->isKeyDown(aie::INPUT_KEY_Z)) m_position -= up * a_deltaTime * 3.5f;
 	
-	if (input->isKeyDown(aie::INPUT_KEY_A)) m_position -= right * a_deltaTime * 3.f;
+	if (input->isKeyDown(aie::INPUT_KEY_A)) m_position -= right * a_deltaTime * 3.5f;
 
-	if (input->isKeyDown(aie::INPUT_KEY_D)) m_position += right * a_deltaTime * 3.f;
+	if (input->isKeyDown(aie::INPUT_KEY_D)) m_position += right * a_deltaTime * 3.5f;
 	
-	if (input->isKeyDown(aie::INPUT_KEY_W)) m_position += forward * a_deltaTime * 3.f;
+	if (input->isKeyDown(aie::INPUT_KEY_W)) m_position += forward * a_deltaTime * 3.5f;
 	
-	if (input->isKeyDown(aie::INPUT_KEY_S)) m_position -= forward * a_deltaTime * 3.f;
+	if (input->isKeyDown(aie::INPUT_KEY_S)) m_position -= forward * a_deltaTime * 3.5f;
 	
 	// -----
 	// Get current position of mouse coordiniates

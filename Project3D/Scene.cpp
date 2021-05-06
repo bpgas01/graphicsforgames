@@ -19,11 +19,11 @@ void Scene::AddCamera(Camera* a_camera) { m_cameraList.push_back(a_camera); }
 
 void Scene::ChangeCamera(int Cam) 
 {
-	for (auto i : m_cameraList)
+	for (auto *i : m_cameraList)
 	{
 		if (i->GetCamera() == Cam)
 		{
-			m_camera == i;
+			m_camera = i;
 		}
 	}
 }

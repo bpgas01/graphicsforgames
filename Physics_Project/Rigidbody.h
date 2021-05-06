@@ -1,6 +1,7 @@
 #pragma once
 #include "PhysicsObject.h"
 #include <list>
+#include <string>
 #include <functional>
 #include <iostream>
 
@@ -37,6 +38,11 @@ public:
 
 	std::function<void(PhysicsObject*)> m_collisionCallback;
 
+	std::string GetName() { return objectName; }
+	void SetName(std::string name) { objectName = name; }
+	bool compareName(std::string name) { if (name == objectName) { return true; } return false; }
+
+	
 	void TriggerEnter(PhysicsObject* a_otherActor);
 	std::function<void(PhysicsObject*)> triggerEnter;
 	std::function<void(PhysicsObject*)> triggerExit;
@@ -60,6 +66,8 @@ protected:
 	float m_linearDrag;
 	float m_angularDrag;
 
+	std::string objectName;
+	
 	// These will store the local x and y axes of the rigidbody based on it's angle of rotation
 	glm::vec2 m_localX;
 	glm::vec2 m_localY;

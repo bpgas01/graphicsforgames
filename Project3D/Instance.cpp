@@ -54,8 +54,9 @@ void Instance::Draw(Scene* scene)
 	// Get total number of scene lights. 
 	// so models can be effected by multiple lights + blending
 	int numofLights = scene->GetNumOfLights();
-	std::cout << numofLights << std::endl;
+	
 	m_shader->bindUniform("numLights", numofLights);
+	
 	m_shader->bindUniform("PointLightPosition", numofLights, scene->GetPointLightPos());
 	m_shader->bindUniform("PointLightColor", numofLights, scene->GetPointLightColor());
 

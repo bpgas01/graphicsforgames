@@ -64,6 +64,14 @@ protected:
 	float lineLength;
 	float mouseState;
 
+	// Blue player
+	int playerOneScore = 0;
+	const int MAX_PLAYER_ONE_SCORE = 5;
+	
+	// Red Player
+	int playerTwoScore = 0;
+	const int MAX_PLAYER_TWO_SCORE = 5;
+	
 	const float m_aspectRatio = 16.0f / 9.0f;
 	const float m_extents = 100.0f;
 };

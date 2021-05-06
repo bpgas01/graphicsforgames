@@ -23,7 +23,7 @@ uniform vec3 LightDirection;
  
 
 const int MAX_LIGHTS = 4;
-uniform int numOfLights;
+uniform int numLights;
 uniform vec3 PointLightColor[MAX_LIGHTS];
 uniform vec3 PointLightPosition[MAX_LIGHTS];
 
@@ -79,7 +79,7 @@ void main()
 
     vec3 specularTotal = specular(L, LightColor, N, V);
 
-    for (int i = 0; i < numOfLights; i++)
+    for (int i = 0; i < numLights; i++)
     {
       vec3 direction = vPosition.xyz - PointLightPosition[i];
       float distance = length(direction);
