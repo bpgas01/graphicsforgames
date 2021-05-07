@@ -179,15 +179,18 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="OBJMesh.cpp" />
+    <ClCompile Include="ParticleEmitter.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Shader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application3D.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="ColorPicker.h" />
     <ClInclude Include="Instance.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="OBJMesh.h" />
+    <ClInclude Include="ParticleEmitter.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="tiny_obj_loader.h" />

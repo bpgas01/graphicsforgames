@@ -4,7 +4,9 @@
 #include "Mesh.h"
 #include "OBJMesh.h"
 #include "imgui.h"
+#include "ColorPicker.h"
 
+#include "ParticleEmitter.h"
 #include "Shader.h"
 #include "Camera.h"
 #include "Scene.h"
@@ -55,6 +57,11 @@ protected:
 	aie::ShaderProgram		m_particleShader;
 	// ============================
 
+	// ===== PARTICLES ============
+	ParticleEmitter* m_emitter;
+	
+
+	
 	struct gameObject
 	{
 		std::string			name;
@@ -76,7 +83,7 @@ protected:
 
 	
 	Scene* m_scene;
-
+	
 	
 	gameObject*				m_bunny;
 	gameObject*				m_dragon;
@@ -86,7 +93,6 @@ protected:
 	quadObject				m_quad;
 	
 
-	
 	glm::vec3				diffuseVec;
 	float					xPos = 0;
 	float					yPos = 0;

@@ -69,6 +69,23 @@ glm::mat4 Camera::GetViewMatrix()
 
 glm::mat4 Camera::GetProjectionMatrix(float width, float height)
 {
+	if (IsOrthographic())
+	{
+		return glm::ortho(0.0f, width / height, 0.1f, 100.0f);
+	}
+	
 	return glm::perspective(glm::pi<float>() * 0.25f,
-		width / height , 0.1f, 1000.0f);
+		width / height, 0.1f, 1000.0f);
+
+}
+
+glm::mat4 Camera::GetOrthographic(float width, float height)
+{
+
+	return glm::ortho(0.0f, width / height, 0.1f, 100.0f);
+	
+}
+glm::mat4 Camera::MakeTransform()
+{
+	return glm::translate(glm::mat4(1), m_position);
 }

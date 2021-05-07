@@ -5,7 +5,7 @@
 #include "Gizmos.h"
 #include "Input.h"
 #include "Mesh.h"
-
+#include "ColorPicker.h"
 #include "Scene.h"
 #include "Instance.h"
 
@@ -27,133 +27,7 @@ Application3D::~Application3D()
 {
 }
 
-bool ColorPicker(const char* label, float col[3])
-{
-    static const float HUE_PICKER_WIDTH = 20.0f;
-    static const float CROSSHAIR_SIZE = 7.0f;
-    static const ImVec2 SV_PICKER_SIZE = ImVec2(200, 200);
 
-    ImColor color(col[0], col[1], col[2]);
-    bool value_changed = false;
-
-    ImDrawList* draw_list = ImGui::GetWindowDrawList();
-
-    ImVec2 picker_pos = ImGui::GetCursorScreenPos();
-
-    ImColor colors[] = { ImColor(255, 0, 0),
-        ImColor(255, 255, 0),
-        ImColor(0, 255, 0),
-        ImColor(0, 255, 255),
-        ImColor(0, 0, 255),
-        ImColor(255, 0, 255),
-        ImColor(255, 0, 0) };
-
-    for (int i = 0; i < 6; ++i)
-    {
-        draw_list->AddRectFilledMultiColor(
-            ImVec2(picker_pos.x + SV_PICKER_SIZE.x + 10, picker_pos.y + i * (SV_PICKER_SIZE.y / 6)),
-            ImVec2(picker_pos.x + SV_PICKER_SIZE.x + 10 + HUE_PICKER_WIDTH,
-                picker_pos.y + (i + 1) * (SV_PICKER_SIZE.y / 6)),
-            colors[i],
-            colors[i],
-            colors[i + 1],
-            colors[i + 1]);
-    }
-
-    float hue, saturation, value;
-    ImGui::ColorConvertRGBtoHSV(
-        color.Value.x, color.Value.y, color.Value.z, hue, saturation, value);
-
-    draw_list->AddLine(
-        ImVec2(picker_pos.x + SV_PICKER_SIZE.x + 8, picker_pos.y + hue * SV_PICKER_SIZE.y),
-        ImVec2(picker_pos.x + SV_PICKER_SIZE.x + 12 + HUE_PICKER_WIDTH, picker_pos.y + hue * SV_PICKER_SIZE.y),
-        ImColor(255, 255, 255));
-
-    {
-        const int step = 5;
-        ImVec2 pos = ImVec2(0, 0);
-
-        ImVec4 c00(1, 1, 1, 1);
-        ImVec4 c10(1, 1, 1, 1);
-        ImVec4 c01(1, 1, 1, 1);
-        ImVec4 c11(1, 1, 1, 1);
-        for (int y = 0; y < step; y++)
-        {
-            for (int x = 0; x < step; x++)
-            {
-                float s0 = (float)x / (float)step;
-                float s1 = (float)(x + 1) / (float)step;
-                float v0 = 1.0 - (float)(y) / (float)step;
-                float v1 = 1.0 - (float)(y + 1) / (float)step;
-
-                ImGui::ColorConvertHSVtoRGB(hue, s0, v0, c00.x, c00.y, c00.z);
-                ImGui::ColorConvertHSVtoRGB(hue, s1, v0, c10.x, c10.y, c10.z);
-                ImGui::ColorConvertHSVtoRGB(hue, s0, v1, c01.x, c01.y, c01.z);
-                ImGui::ColorConvertHSVtoRGB(hue, s1, v1, c11.x, c11.y, c11.z);
-
-                draw_list->AddRectFilledMultiColor(
-                    ImVec2(picker_pos.x + pos.x, picker_pos.y + pos.y),
-                    ImVec2(picker_pos.x + pos.x + SV_PICKER_SIZE.x / step, picker_pos.y + pos.y + SV_PICKER_SIZE.y / step),
-                    ImGui::ColorConvertFloat4ToU32(c00),
-                    ImGui::ColorConvertFloat4ToU32(c10),
-                    ImGui::ColorConvertFloat4ToU32(c11),
-                    ImGui::ColorConvertFloat4ToU32(c01));
-
-                pos.x += SV_PICKER_SIZE.x / step;
-            }
-            pos.x = 0;
-            pos.y += SV_PICKER_SIZE.y / step;
-        }
-    }
-
-    float x = saturation * SV_PICKER_SIZE.x;
-    float y = (1 - value) * SV_PICKER_SIZE.y;
-    ImVec2 p(picker_pos.x + x, picker_pos.y + y);
-    draw_list->AddLine(ImVec2(p.x - CROSSHAIR_SIZE, p.y), ImVec2(p.x - 2, p.y), ImColor(255, 255, 255));
-    draw_list->AddLine(ImVec2(p.x + CROSSHAIR_SIZE, p.y), ImVec2(p.x + 2, p.y), ImColor(255, 255, 255));
-    draw_list->AddLine(ImVec2(p.x, p.y + CROSSHAIR_SIZE), ImVec2(p.x, p.y + 2), ImColor(255, 255, 255));
-    draw_list->AddLine(ImVec2(p.x, p.y - CROSSHAIR_SIZE), ImVec2(p.x, p.y - 2), ImColor(255, 255, 255));
-
-    ImGui::InvisibleButton("saturation_value_selector", SV_PICKER_SIZE);
-
-    if (ImGui::IsItemActive() && ImGui::GetIO().MouseDown[0])
-    {
-        ImVec2 mouse_pos_in_canvas = ImVec2(
-            ImGui::GetIO().MousePos.x - picker_pos.x, ImGui::GetIO().MousePos.y - picker_pos.y);
-
-        /**/ if (mouse_pos_in_canvas.x < 0) mouse_pos_in_canvas.x = 0;
-        else if (mouse_pos_in_canvas.x >= SV_PICKER_SIZE.x - 1) mouse_pos_in_canvas.x = SV_PICKER_SIZE.x - 1;
-
-        /**/ if (mouse_pos_in_canvas.y < 0) mouse_pos_in_canvas.y = 0;
-        else if (mouse_pos_in_canvas.y >= SV_PICKER_SIZE.y - 1) mouse_pos_in_canvas.y = SV_PICKER_SIZE.y - 1;
-
-        value = 1 - (mouse_pos_in_canvas.y / (SV_PICKER_SIZE.y - 1));
-        saturation = mouse_pos_in_canvas.x / (SV_PICKER_SIZE.x - 1);
-        value_changed = true;
-    }
-
-    ImGui::SetCursorScreenPos(ImVec2(picker_pos.x + SV_PICKER_SIZE.x + 10, picker_pos.y));
-    ImGui::InvisibleButton("hue_selector", ImVec2(HUE_PICKER_WIDTH, SV_PICKER_SIZE.y));
-
-    if ((ImGui::IsItemHovered() || ImGui::IsItemActive()) && ImGui::GetIO().MouseDown[0])
-    {
-        ImVec2 mouse_pos_in_canvas = ImVec2(
-            ImGui::GetIO().MousePos.x - picker_pos.x, ImGui::GetIO().MousePos.y - picker_pos.y);
-
-        /* Previous horizontal bar will represent hue=1 (bottom) as hue=0 (top). Since both colors are red, we clamp at (-2, above edge) to avoid visual continuities */
-        /**/ if (mouse_pos_in_canvas.y < 0) mouse_pos_in_canvas.y = 0;
-        else if (mouse_pos_in_canvas.y >= SV_PICKER_SIZE.y - 2) mouse_pos_in_canvas.y = SV_PICKER_SIZE.y - 2;
-
-        hue = mouse_pos_in_canvas.y / (SV_PICKER_SIZE.y - 1);
-        value_changed = true;
-    }
-
-    color = ImColor::HSV(hue > 0 ? hue : 1e-6, saturation > 0 ? saturation : 1e-6, value > 0 ? value : 1e-6);
-    col[0] = color.Value.x;
-    col[1] = color.Value.y;
-    col[2] = color.Value.z;
-    return value_changed | ImGui::ColorEdit3(label, col);
-}
 
 bool Application3D::startup()
 {
@@ -177,8 +51,8 @@ bool Application3D::startup()
     Light light;
     light.m_color = { 1, 1,1 };
     light.m_direction = { 1,-1,1 };
-   
-
+    m_emitter = new ParticleEmitter();
+    m_emitter->initialise(20000, 1000, 10, 5, 1, 5, 0.1, 0.001, vec4(1, 0, 0, 1), vec4(1, 1, 0, 1));
     m_iter = 0;
 	return LoadShaperAndMeshLogic(light);
 }
@@ -221,46 +95,81 @@ void Application3D::DebugUI(float dt)
   
     static float ambientBrightness;
     static float lightColor[3];
+    static float start_alpha = 1;
+    static float end_alpha = 1;
+    static float start_particle_color[3];
+    static float end_particle_color[3];
+    static float lifespan_min = 10;
+    static float lifespan_max = 5;
+    static float velocity_min = 1;
+    static float velocity_max = 5;
+    static float start_size = 0.1;
+    static float end_size = 0.01;
+    static float emit_rate = 100;
+	
+	
+#pragma region Lighting
+    ImGui::Begin("Settings");
    
-    ImGui::Begin("Inspector View");
-    ImGui::SetNextWindowPos({ 0,0 });  
-    if (ImGui::CollapsingHeader("LIGHTING"))
+    if (ImGui::CollapsingHeader("Lighting"))
     {
-        ImGui::Text("Color Picker"); ColorPicker(" ", lightColor);
+        ColorPicker lighting("Lighting");
+        ImGui::Text("Color Picker"); lighting.Picker(lightColor);
         ImGui::Text("Light Direction"); ImGui::SliderFloat3(" ", &m_scene->GetLight().m_direction[0], -1, 1.f, "");
         m_scene->GetLight().m_color = { lightColor[0],lightColor[1],lightColor[2] };
        
-    }    
-    ImGui::Spacing();   
-    if (ImGui::CollapsingHeader("OBJECTS"))
-    {  	
-        ImGui::Text("Select Object");
-       
-        for (int x = 0; x < m_objects.size(); x++)
-        {
-            if (ImGui::CollapsingHeader(m_objects[x]->name.c_str()))
-            {
-                ImGui::BeginChild("a");
-                ImGui::DragFloat3("Position", &m_objects[x]->position[0], 0.01, -10, 10);
-                ImGui::DragFloat3("Scale", &m_objects[x]->scale[0], 0.01, 0, 10);
-                // ImGui::DragFloat3("Rotation", &m_objects[x]->rotation[0], 1, -1000, 1000);
-                ImGui::EndChild();
-            }
-            m_objects[x]->transform = glm::translate(glm::mat4(1.0f), m_objects[x]->position);
-            m_objects[x]->transform = glm::scale(m_objects[x]->transform, m_objects[x]->scale);
-
-        }
     }
-    ImGui::End();
+  
+#pragma endregion
+
+#pragma region Emitter
+    ImGui::Spacing();
+    ImGui::Text("EMITTER SETTINGS");
+    ImGui::SliderFloat("Emit Rate", &emit_rate, 100, 5000);
+    ImGui::SliderFloat("Lifespan Min", &lifespan_min, 0.1, 5);
+    ImGui::SliderFloat("Lifespan Max", &lifespan_max, 0.1, 5);
+    ImGui::Spacing();
+    ImGui::SliderFloat("Velocity Min", &velocity_min, 1, 5);
+    ImGui::SliderFloat("Velocity Max", &velocity_max, 1, 5);
+    ImGui::Spacing();
+	ImGui::SliderFloat("Start Size", &start_size, 0.00, 2);
+    ImGui::SliderFloat("End Size", &end_size, 0.00, 2);
+
+    m_emitter->set_lifespan(lifespan_min,lifespan_max);
+    m_emitter->set_velocity(velocity_min, velocity_max);
+    m_emitter->set_size(start_size, end_size);
+    m_emitter->set_emit_rate(emit_rate);
+	
+	
+    if (ImGui::CollapsingHeader("Start Color"))
+    {
+        ImGui::Text("Start Color");
+        ImGui::SliderFloat("Alpha", &start_alpha, 0, 1);
+        ColorPicker startColor("Start Color");
+        startColor.Picker(start_particle_color);
+        m_emitter->set_starting_color(glm::vec4(start_particle_color[0], start_particle_color[1], start_particle_color[2], start_alpha));
+    }
+	
+	if (ImGui::CollapsingHeader("End Color"))
+    {
+        ColorPicker endColor("End Color");
+        ImGui::SliderFloat("Alpha", &end_alpha, 0, 1);
+        ImGui::Text("End Color");
+        endColor.Picker(end_particle_color);
+        m_emitter->set_ending_color(glm::vec4(end_particle_color[0], end_particle_color[1], end_particle_color[2], end_alpha));
+    }
+
+
+
+	
+	ImGui::End();
+#pragma endregion 
 }
 
 
 
 void Application3D::update(float deltaTime)
 {
-
-
-	
 	// query time since application started
 	float time = getTime();
     // Render IMGUI debug
@@ -275,16 +184,16 @@ void Application3D::update(float deltaTime)
 	Gizmos::clear();
 
 	// draw a simple grid with gizmos
-	vec4 white(1);
+	
 	vec4 black(0, 0, 0, 1);
 	for (int i = 0; i < 21; ++i)
 	{
 		Gizmos::addLine(vec3(-10 + i, 0, 10),
 			vec3(-10 + i, 0, -10),
-			i == 10 ? white : black);
+			 black);
 		Gizmos::addLine(vec3(10, 0, -10 + i),
 			vec3(-10, 0, -10 + i),
-			i == 10 ? white : black);
+			 black);
 	}
 
     // rotate light around using application time as the delta time
@@ -298,6 +207,7 @@ void Application3D::update(float deltaTime)
     }
     
     m_camera->Update(deltaTime);
+    m_emitter->update(deltaTime, m_camera->MakeTransform());
     // Check for Function key logic to change cameras
     SwitchCameraLogic();
 	
@@ -315,34 +225,45 @@ void Application3D::draw()
 
     glm::mat4 projectionMatrix = m_camera->GetProjectionMatrix((float)getWindowWidth(), (float)getWindowHeight());
     glm::mat4 viewMatrix = m_camera->GetViewMatrix();
+	
+    glm::mat4 temp(
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    );
+	
+    m_particleShader.bind();
+    m_emitter->draw();
+    auto pvm = projectionMatrix * viewMatrix * temp;
+    m_particleShader.bindUniform("ProjectionViewModel", pvm);
+
 
     for (auto i : m_scene->GetPointLights()) 
     {
         glm::vec4 temp(i.m_color.r, i.m_color.g, i.m_color.b, 1);
         Gizmos::addSphere(i.m_direction, 0.1f, 10, 10, temp);
     }
-	for (auto i : m_scene->GetCameras())
+	for (auto *i : m_scene->GetCameras())
 	{
 		
 		Gizmos::addSphere(i->GetPosition(), 0.03f, 10,10, glm::vec4(1,1,1,1));
 		
 	}
 
-    // Add particle Effects here
-    // bind particle shaders to temp matrix and draw
-
+  
     Light sunLight = m_scene->GetLight();
     glm::vec4 sunColor(sunLight.m_color.r, sunLight.m_color.g, sunLight.m_color.b, 1);
     Gizmos::addLine({ 0,0,0 }, sunLight.m_direction * 4.0f, sunColor);
-    
+	
 	// update perspective in case window resized
 	m_projectionMatrix = glm::perspective(glm::pi<float>() * 0.25f,
 		getWindowWidth() / (float)getWindowHeight(),
 		0.1f, 1000.f);
+    
 
-	//DrawShaderAndMeshes(projectionMatrix, viewMatrix);
+	
     m_scene->Draw();
-	// draw 3D gizmos
 	Gizmos::draw(projectionMatrix * viewMatrix);
 
 	
@@ -385,8 +306,9 @@ bool Application3D::LoadShaperAndMeshLogic(Light a_light)
 
 
     // load particle shaders
-
-
+    m_particleShader.loadShader(aie::eShaderStage::VERTEX, "./shaders/ParticleShader.vert");
+    m_particleShader.loadShader(aie::eShaderStage::FRAGMENT, "./shaders/ParticleShader.frag");
+    if (m_particleShader.link() == false) { printf("Shader Erro: %s", m_particleShader.getLastError()); }
     // Load Textured shaders
     m_texturedShader.loadShader(aie::eShaderStage::VERTEX, "./shaders/textured.vert");
     m_texturedShader.loadShader(aie::eShaderStage::FRAGMENT, "./shaders/textured.frag");
@@ -444,7 +366,7 @@ bool Application3D::LoadShaperAndMeshLogic(Light a_light)
           0,0,0,1
     };
     m_dragon->scale = { 0.5,0.5,0.5 };
-    m_dragon->position = { -1,1,1 };
+    m_dragon->position = { -10,1,1 };
  
     // ------------ LOAD GUN ---------------------------
 
@@ -479,6 +401,10 @@ bool Application3D::LoadShaperAndMeshLogic(Light a_light)
     stationary_top->SetRotation(glm::vec2(0, -90));
     m_scene->AddCamera(stationary_top);
 
+
+
+
+	
     m_scene->AddCamera(m_camera);
 
     // Add gameObjects to new instances

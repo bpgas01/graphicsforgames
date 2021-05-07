@@ -50,7 +50,7 @@ void Instance::Draw(Scene* scene)
 	m_shader->bindUniform("LightColor", scene->GetLight().m_color);
 	m_shader->bindUniform("LightDirection", scene->GetLight().m_direction);
 	m_shader->bindUniform("ModelMatrix", m_transform);
-
+	
 	// Get total number of scene lights. 
 	// so models can be effected by multiple lights + blending
 	int numofLights = scene->GetNumOfLights();
