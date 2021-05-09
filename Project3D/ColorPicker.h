@@ -2,6 +2,9 @@
 
 #include "imgui.h"
 
+// Custom IMGUI color picker
+
+
 class ColorPicker
 {
 public:
@@ -134,7 +137,7 @@ public:
             value_changed = true;
         }
 
-        color = ImColor::HSV(hue > 0 ? hue : 1e-6, saturation > 0 ? saturation : 1e-6, value > 0 ? value : 1e-6);
+        color = ImColor::HSV(hue > 0 ? hue : 1e-8, saturation > 0 ? saturation : 1e-8, value > 0 ? value : 1e-8);
         col[0] = color.Value.x;
         col[1] = color.Value.y;
         col[2] = color.Value.z;

@@ -4,7 +4,7 @@ class Camera
 {
 
 public:
-
+	// Constructors + Getters and setters
 	Camera();
 	Camera(int a_camera, glm::vec3 a_position) : m_camera(a_camera), m_position(a_position) 
 	{
@@ -19,11 +19,9 @@ public:
 	
 	int GetCamera() const { return m_camera; }
 	glm::vec3 GetPosition() const { return m_position; }
-	bool IsOrthographic() { return m_isOrthographic; }
 	
 	void SetCamera(int a_camera) { m_camera = a_camera; }
 	void SetPosition( const glm::vec3 a_position) { m_position = a_position; }
-	void SetOrthographic(bool state) { m_isOrthographic = state; }
 	void SetStationary( const bool a_state) { m_isStationary = a_state; }
 	void SetRotation(const glm::vec2 rotation)
 	{
@@ -34,20 +32,22 @@ public:
 	glm::mat4 MakeTransform();
 	glm::mat4 GetViewMatrix();
 	glm::mat4 GetProjectionMatrix(float width, float height);
-	glm::mat4 GetOrthographic(float width, float height);
 
 private:
+	// if camera is moving or not
 	bool m_isStationary = false;
+	// camera ID - how we check for current camera
 	int m_camera = 0;
+	// theta and phi values for calculating rotation
 	float m_theta;
 	float m_phi; 
 	int zero = 0;
+	// Position and rotation vectors
 	glm::vec3 m_position;
 	glm::vec2 m_rotation;
 	
 	float lastMouseX, 
 		  lastMouseY;
 
-	bool m_isOrthographic = false;
 };
 

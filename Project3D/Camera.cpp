@@ -14,6 +14,7 @@ Camera::Camera()
 
 void Camera::Update(float a_deltaTime)
 {
+	// Get input from Keyboard
 	aie::Input* input = aie::Input::getInstance();
 	float thetaR = glm::radians(m_theta);
 	float phiR = glm::radians(m_phi);
@@ -59,6 +60,7 @@ void Camera::Update(float a_deltaTime)
 
 glm::mat4 Camera::GetViewMatrix()
 {
+	// Calculate where the camera is 'looking'
 	float thetaR = glm::radians(m_theta);
 	float phiR = glm::radians(m_phi);
 	glm::vec3 forward(glm::cos(phiR) * glm::cos(thetaR), glm::sin(phiR), glm::cos(phiR) * glm::sin(thetaR));
@@ -69,23 +71,15 @@ glm::mat4 Camera::GetViewMatrix()
 
 glm::mat4 Camera::GetProjectionMatrix(float width, float height)
 {
-	if (IsOrthographic())
-	{
-		return glm::ortho(0.0f, width / height, 0.1f, 100.0f);
-	}
-	
+	// return the projection matrix of the camera 
 	return glm::perspective(glm::pi<float>() * 0.25f,
 		width / height, 0.1f, 1000.0f);
 
 }
 
-glm::mat4 Camera::GetOrthographic(float width, float height)
-{
 
-	return glm::ortho(0.0f, width / height, 0.1f, 100.0f);
-	
-}
 glm::mat4 Camera::MakeTransform()
 {
+	// return transform of the camera (for calculating the position of the particke emission system)
 	return glm::translate(glm::mat4(1), m_position);
 }

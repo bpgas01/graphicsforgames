@@ -11,20 +11,22 @@
 #include <glm/ext.hpp>
 #include <iostream>
 
+// Constructor for an instance
 Instance::Instance(glm::mat4 a_transform, aie::OBJMesh* a_mesh, aie::ShaderProgram* a_shader)
 	: m_transform(a_transform), m_mesh(a_mesh), m_shader(a_shader)
 
 {
 	
 }
-
-Instance::Instance(glm::vec3 a_position, glm::vec3 a_eulerAngles, glm::vec3 a_scale, aie::OBJMesh* a_mesh, aie::ShaderProgram* a_shader)
-	: m_mesh(a_mesh), m_shader(a_shader)
+// constructor for an instance
+Instance::Instance(glm::vec3 a_position, glm::vec3 a_eulerAngles, glm::vec3 a_scale, aie::OBJMesh* a_mesh, aie::ShaderProgram* a_shader, std::string name)
+	: m_mesh(a_mesh), m_shader(a_shader), name(name)
 {
 	m_transform = MakeTransform(a_position, a_eulerAngles, a_scale);
 	m_rotation = a_eulerAngles;
 }
 
+// Create matrix transform from position, rotation and scale values
 glm::mat4 Instance::MakeTransform(glm::vec3 a_position, glm::vec3 a_eulerAngles, glm::vec3 a_scale)
 {
 	return glm::translate(glm::mat4(1), a_position)
@@ -46,7 +48,7 @@ void Instance::Draw(Scene* scene)
 	// All scene values and set to vert + frag shader
 	m_shader->bindUniform("ProjectionViewModel", pvm);
 	m_shader->bindUniform("CameraPosition", scene->getCamera()->GetPosition());
-	m_shader->bindUniform("AmbientColor", scene->GetAmbientLight());
+	m_shader->bindUniform("AmbientColor", scene->m_ambientLight);
 	m_shader->bindUniform("LightColor", scene->GetLight().m_color);
 	m_shader->bindUniform("LightDirection", scene->GetLight().m_direction);
 	m_shader->bindUniform("ModelMatrix", m_transform);

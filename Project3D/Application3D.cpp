@@ -1,5 +1,4 @@
 ﻿#include "Application3D.h"
-
 #include <iostream>
 
 #include "Gizmos.h"
@@ -8,17 +7,23 @@
 #include "ColorPicker.h"
 #include "Scene.h"
 #include "Instance.h"
+#include "RenderTarget.h"
 
-
+#include <string>
+#include <iostream>
+#include <fstream>
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 #include "imgui.h"
 
+// Create namespace 'short cuts'
 using glm::vec3;
 using glm::vec4;
 using glm::mat4;
 using aie::Gizmos;
+using namespace ImGui;
 
+// Application constructor
 Application3D::Application3D()
 {
 }
@@ -27,13 +32,13 @@ Application3D::~Application3D()
 {
 }
 
-
-
 bool Application3D::startup()
 {
+    // Set grey background
 	setBackgroundColour(0.25f, 0.25f, 0.25f);
 
-	// initialise gizmo primitive counts
+   
+    // initialise gizmo primitive counts
 	Gizmos::create(10000, 10000, 10000, 10000);
 
 	// create simple camera transforms
@@ -45,15 +50,22 @@ bool Application3D::startup()
     // Create new camera and set it to the default (Camera 0)
     m_camera = new Camera(0, glm::vec3(0, 3, -0.6));
 
-    // To do
-    // 1. create particle system
-
+    // Create default dynamic light
     Light light;
     light.m_color = { 1, 1,1 };
     light.m_direction = { 1,-1,1 };
+
+    // Init particle Emitter
     m_emitter = new ParticleEmitter();
-    m_emitter->initialise(20000, 1000, 10, 5, 1, 5, 0.1, 0.001, vec4(1, 0, 0, 1), vec4(1, 1, 0, 1));
+    m_emitter->initialise(1000, 50,
+        0.1f, 1.0f,
+        1.0f, 5.0f,
+        0.3f, 0.1f,
+        glm::vec4(1, 0, 0, 1), glm::vec4(1, 1, 0, 1));
+
     m_iter = 0;
+  
+    // Load Shaders and meshes
 	return LoadShaperAndMeshLogic(light);
 }
 
@@ -63,36 +75,13 @@ void Application3D::shutdown()
     //delete m_scene;
 }
 
-
-void HorizontalSpace(int amount)
-{
-    for (int x = 0; x < amount; x++)
-    {
-        ImGui::Spacing();
-        ImGui::SameLine();
-    }
-}
-
-
-glm::mat4 RotateY(float degree)
-{
-    float rads = glm::radians(degree);
-
-    return glm::mat4(
-        1, 0, 0, 0,
-        0, cos(rads), -sin(rads), 0,
-        0, sin(rads), cos(rads), 0,
-        0, 0, 0, 0
-        );
-
-}
-
-
-
+// Main Debug UI for Imgui
 void Application3D::DebugUI(float dt)
 {
-    // Static Variables
-  
+    // Static Variables for particle emitter
+#pragma region Emitter Variables
+
+
     static float ambientBrightness;
     static float lightColor[3];
     static float start_alpha = 1;
@@ -105,27 +94,126 @@ void Application3D::DebugUI(float dt)
     static float velocity_max = 5;
     static float start_size = 0.1;
     static float end_size = 0.01;
-    static float emit_rate = 100;
-	
-	
-#pragma region Lighting
+    static int ParticleAmount = 1000;
+    
+#pragma endregion
+	// Lighting settings
+#pragma region Lighting, Debug , Post Processing
     ImGui::Begin("Settings");
-   
+    
+    if (CollapsingHeader("Debug")) {
+        if (Button("Enable Gizmos")) { gizmos = true;  }
+        if (Button("Disable Gizmos")) { gizmos = false;  }
+    }
     if (ImGui::CollapsingHeader("Lighting"))
     {
+        Indent();
         ColorPicker lighting("Lighting");
-        ImGui::Text("Color Picker"); lighting.Picker(lightColor);
-        ImGui::Text("Light Direction"); ImGui::SliderFloat3(" ", &m_scene->GetLight().m_direction[0], -1, 1.f, "");
-        m_scene->GetLight().m_color = { lightColor[0],lightColor[1],lightColor[2] };
-       
-    }
-  
-#pragma endregion
+      
+        ImGui::Spacing();
+        Text("Dynamic Light");
+        if (CollapsingHeader("Dynamic Light")) {
+            Indent();
+            std::string name;
+            name = "Direction";
+            if (Button("Enable Movement")) {
+                move_light = true;
+            }
+            SameLine();
+            if (Button("Disable Movement")) {
+                move_light = false;
+            }
+            SliderFloat(name.c_str(), &m_scene->GetLight().m_direction[0], -20.f, 20.f);
 
+
+            ImGui::Text("Color Picker"); lighting.Picker(lightColor);
+            m_scene->GetLight().m_color = { lightColor[0],lightColor[1],lightColor[2] };
+            Unindent();
+        }
+
+        ImGui::Text("Point Lights");
+        if (CollapsingHeader("Point Light")) {
+            int count = 0;
+
+            Indent();
+            static float light_intensity = 20.f;
+            std::string namea = "Point Light intensity";
+            SliderFloat(namea.c_str(), &light_intensity, 0.00, 100.00);
+
+            for (auto i = m_scene->GetPointLights().begin(); i != m_scene->GetPointLights().end(); i++) {
+                
+                count++;
+                std::string name = "Light: " + std::to_string(count);
+
+                if (CollapsingHeader(name.c_str())) {
+
+                    Indent();
+
+                    name += "Pos";
+                    SliderFloat3(name.c_str(), &i->m_direction[0], -20.0f, 20.0f);
+
+                    name = "Light: " + std::to_string(count) + " color";
+                    ColorPicker point_picker(name.c_str());
+                    point_picker.Picker(lightColor);
+
+                   
+                    i->SetColor(glm::vec3(lightColor[0],lightColor[1],lightColor[2]), light_intensity);
+
+
+                    Unindent();
+
+                }
+            }
+            Unindent();
+        }
+
+        Text("Ambient Light");
+        if (CollapsingHeader("Ambient")) {
+            Indent();
+            std::string name;
+            name = "color";
+            static float amb[3];
+            SliderFloat3(name.c_str(), amb, 0, 20);
+            m_scene->m_ambientLight = glm::vec3(amb[0], amb[1], amb[2]);
+            Unindent();
+        }
+
+
+
+        Unindent();
+    }
+    if (CollapsingHeader("Post Processing")) {
+        Indent();
+        Text("Enable / Disable Post Processing");
+        if (Button("Enable Distort")) {
+            enable_post = true;
+            blur = false;
+        }
+        SameLine();
+        if (Button("Disable Distort")) {
+            enable_post = false;
+            
+        }
+        
+        if (Button("Enable Blur")) {
+            blur = true;
+            enable_post = false;
+        }
+        SameLine();
+        if (Button("Disable Blur")) {
+            blur = false;
+        }
+        Unindent();
+        
+    }
+    m_scene->DebugUI(current_camera);
+    
+#pragma endregion
+    // Emitter Settings
 #pragma region Emitter
-    ImGui::Spacing();
+    /*ImGui::Spacing();
     ImGui::Text("EMITTER SETTINGS");
-    ImGui::SliderFloat("Emit Rate", &emit_rate, 100, 5000);
+    ImGui::SliderInt("Particle Amount", &ParticleAmount, 0, 25000);
     ImGui::SliderFloat("Lifespan Min", &lifespan_min, 0.1, 5);
     ImGui::SliderFloat("Lifespan Max", &lifespan_max, 0.1, 5);
     ImGui::Spacing();
@@ -135,12 +223,7 @@ void Application3D::DebugUI(float dt)
 	ImGui::SliderFloat("Start Size", &start_size, 0.00, 2);
     ImGui::SliderFloat("End Size", &end_size, 0.00, 2);
 
-    m_emitter->set_lifespan(lifespan_min,lifespan_max);
-    m_emitter->set_velocity(velocity_min, velocity_max);
-    m_emitter->set_size(start_size, end_size);
-    m_emitter->set_emit_rate(emit_rate);
-	
-	
+  
     if (ImGui::CollapsingHeader("Start Color"))
     {
         ImGui::Text("Start Color");
@@ -157,7 +240,7 @@ void Application3D::DebugUI(float dt)
         ImGui::Text("End Color");
         endColor.Picker(end_particle_color);
         m_emitter->set_ending_color(glm::vec4(end_particle_color[0], end_particle_color[1], end_particle_color[2], end_alpha));
-    }
+    }*/
 
 
 
@@ -166,14 +249,14 @@ void Application3D::DebugUI(float dt)
 #pragma endregion 
 }
 
-
-
+// Main update Loop
 void Application3D::update(float deltaTime)
 {
 	// query time since application started
 	float time = getTime();
     // Render IMGUI debug
     DebugUI(deltaTime);
+   
     // rotate camera
 	aie::Input* input = aie::Input::getInstance();
 
@@ -184,7 +267,6 @@ void Application3D::update(float deltaTime)
 	Gizmos::clear();
 
 	// draw a simple grid with gizmos
-	
 	vec4 black(0, 0, 0, 1);
 	for (int i = 0; i < 21; ++i)
 	{
@@ -196,8 +278,11 @@ void Application3D::update(float deltaTime)
 			 black);
 	}
 
-    // rotate light around using application time as the delta time
-    m_scene->GetLight().m_direction = glm::normalize(glm::vec3(glm::cos(time * 2), glm::sin(time * 2), 0));
+    if (move_light) {
+        // rotate light around using application time as the delta time
+        m_scene->GetLight().m_direction = glm::normalize(glm::vec3(glm::cos(time * 2), glm::sin(time * 2), 0));
+    }
+
 	// add a transform so that we can see the axis
 	Gizmos::addTransform(mat4(1));
     for(auto* object : m_scene->getList())
@@ -207,7 +292,9 @@ void Application3D::update(float deltaTime)
     }
     
     m_camera->Update(deltaTime);
+
     m_emitter->update(deltaTime, m_camera->MakeTransform());
+    
     // Check for Function key logic to change cameras
     SwitchCameraLogic();
 	
@@ -218,85 +305,92 @@ void Application3D::update(float deltaTime)
 		quit();
 }
 
+// Main application draw
 void Application3D::draw()
 {
-	// wipe the screen to the background colour
-	clearScreen();
-
+    if (enable_post || blur) {
+        // bind render target
+        m_renderTarget.bind();
+    }
+    // wipe the screen to the background colour
+    clearScreen();
+    
+    // bind transform
     glm::mat4 projectionMatrix = m_camera->GetProjectionMatrix((float)getWindowWidth(), (float)getWindowHeight());
     glm::mat4 viewMatrix = m_camera->GetViewMatrix();
-	
+   
     glm::mat4 temp(
         1, 0, 0, 0,
         0, 1, 0, 0,
         0, 0, 1, 0,
         0, 0, 0, 1
     );
-	
+
+    // Bind particle system shader
     m_particleShader.bind();
-    m_emitter->draw();
     auto pvm = projectionMatrix * viewMatrix * temp;
     m_particleShader.bindUniform("ProjectionViewModel", pvm);
+    m_emitter->draw();
 
-
-    for (auto i : m_scene->GetPointLights()) 
+    // Render gizmos for Point Lights
+    for (auto i : m_scene->GetPointLights())
     {
         glm::vec4 temp(i.m_color.r, i.m_color.g, i.m_color.b, 1);
         Gizmos::addSphere(i.m_direction, 0.1f, 10, 10, temp);
     }
-	for (auto *i : m_scene->GetCameras())
-	{
-		
-		Gizmos::addSphere(i->GetPosition(), 0.03f, 10,10, glm::vec4(1,1,1,1));
-		
-	}
+   
+    // Update Projection matrix for screen size changes
+    m_projectionMatrix = glm::perspective(glm::pi<float>() * 0.25f,
+        getWindowWidth() / (float)getWindowHeight(),
+        0.1f, 1000.f);
 
-  
-    Light sunLight = m_scene->GetLight();
-    glm::vec4 sunColor(sunLight.m_color.r, sunLight.m_color.g, sunLight.m_color.b, 1);
-    Gizmos::addLine({ 0,0,0 }, sunLight.m_direction * 4.0f, sunColor);
-	
-	// update perspective in case window resized
-	m_projectionMatrix = glm::perspective(glm::pi<float>() * 0.25f,
-		getWindowWidth() / (float)getWindowHeight(),
-		0.1f, 1000.f);
-    
-
-	
+    if (gizmos) {
+        // Draw Gizmos
+        Gizmos::draw(projectionMatrix * viewMatrix);
+    }
+    // Draw scenes
     m_scene->Draw();
-	Gizmos::draw(projectionMatrix * viewMatrix);
+    
+    if (blur) {
 
-	
+        // unbind render target and return to backbuffer
+        m_renderTarget.unbind();
+        // clear the back buffer
+        clearScreen();
+
+        m_postProcessing.bind();
+        m_postProcessing.bindUniform("colorTarget", 0);
+        m_renderTarget.getTarget(0).bind(0);
+
+        // Draw fullscreen quad
+        m_quadFullscreen.Draw();
+     
+    }
+    
+    if (enable_post) {
+
+        // unbind render target and return to backbuffer
+        m_renderTarget.unbind();
+    
+        // clear the back buffer
+        clearScreen();
+
+        // bind post processor
+        m_distShader_POST.bind();
+        m_distShader_POST.bindUniform("colorTarget", 0);
+        m_renderTarget.getTarget(0).bind(0);
+
+        // Draw fullscreen quad
+        m_quadFullscreen.Draw();
+ 
+    }
+
+ 
 }
 
 void Application3D::SwitchCameraLogic()
 {
-    aie::Input* input = aie::Input::getInstance();
-
-    if (input->isKeyDown(aie::INPUT_KEY_F1))
-    {
-        m_scene->ChangeCamera(0); // default moving camera
-    }
-    else if (input->isKeyDown(aie::INPUT_KEY_F2))
-    {
-        m_scene->ChangeCamera(1); // Stationary front
-    }
-    else if (input->isKeyDown(aie::INPUT_KEY_F3))
-    {
-        m_scene->ChangeCamera(2); // Stationary top
-    }
-    else if (input->isKeyDown(aie::INPUT_KEY_F4))
-    {
-        m_scene->ChangeCamera(3); // stationary side
-    }
-    else if (input->isKeyDown(aie::INPUT_KEY_F5))
-    {
-        m_scene->ChangeCamera(4); // othographic diagonal
-    }
-
     m_camera = m_scene->getCamera(); // Set camera to current
-
-
 }
 
 bool Application3D::LoadShaperAndMeshLogic(Light a_light)
@@ -309,6 +403,8 @@ bool Application3D::LoadShaperAndMeshLogic(Light a_light)
     m_particleShader.loadShader(aie::eShaderStage::VERTEX, "./shaders/ParticleShader.vert");
     m_particleShader.loadShader(aie::eShaderStage::FRAGMENT, "./shaders/ParticleShader.frag");
     if (m_particleShader.link() == false) { printf("Shader Erro: %s", m_particleShader.getLastError()); }
+
+ 
     // Load Textured shaders
     m_texturedShader.loadShader(aie::eShaderStage::VERTEX, "./shaders/textured.vert");
     m_texturedShader.loadShader(aie::eShaderStage::FRAGMENT, "./shaders/textured.frag");
@@ -328,6 +424,10 @@ bool Application3D::LoadShaperAndMeshLogic(Light a_light)
 #pragma endregion
 
 #pragma region Mesh
+
+
+   
+
 
     // ------------ LOAD QUAD ---------------------
     m_quad.mesh.InitialiseQuad();
@@ -401,27 +501,47 @@ bool Application3D::LoadShaperAndMeshLogic(Light a_light)
     stationary_top->SetRotation(glm::vec2(0, -90));
     m_scene->AddCamera(stationary_top);
 
+    // init render target for post processing
+    if (m_renderTarget.initialise(1, getWindowWidth(), getWindowHeight()) == false) {
+        printf("Render Target Error\n");
+        return false;
+    }
+
+    m_quadFullscreen.FullScreenQuad();
+
+    // load post procssing shaders
+    m_postProcessing.loadShader(aie::eShaderStage::VERTEX, "./shaders/post.vert");
+    m_postProcessing.loadShader(aie::eShaderStage::FRAGMENT, "./shaders/post.frag");
+    if (m_postProcessing.link() == false) { printf("Shader Error: %s", m_postProcessing.getLastError()); }
+
+    // load post procssing shaders
+    m_distShader_POST.loadShader(aie::eShaderStage::VERTEX, "./shaders/distort.vert");
+    m_distShader_POST.loadShader(aie::eShaderStage::FRAGMENT, "./shaders/distort.frag");
+    if (m_distShader_POST.link() == false) { printf("Shader Error: %s", m_distShader_POST.getLastError()); }
 
 
 
-	
     m_scene->AddCamera(m_camera);
 
     // Add gameObjects to new instances
-    m_scene->AddInstances(new Instance(m_dragon->position, glm::vec3(0, 0, 0), m_dragon->scale, &m_dragon->mesh, &m_phongShader));
-    m_scene->AddInstances(new Instance(m_futureGun->position, glm::vec3(0, 0, 0), m_futureGun->scale, &m_futureGun->mesh, &m_normalMapShader));
-
+    m_scene->AddInstances(new Instance(m_dragon->position, glm::vec3(0, 0, 0), m_dragon->scale, &m_dragon->mesh, &m_phongShader, "Dragon"));
+    m_scene->AddInstances(new Instance(m_futureGun->position, glm::vec3(0, 0, 0), m_futureGun->scale, &m_futureGun->mesh, &m_normalMapShader, "Gun"));
+    int count = 0;
     for (int i = 0; i < 10; i++)
     {
+        count++;
         if (i % 2 == 0)
         {
+            std::string temp = "Soul Spear: " + std::to_string(count);
             m_scene->AddInstances(new Instance(glm::vec3(i * 2, 0, 0), glm::vec3(0, 90, 0),
-                glm::vec3(1), &m_spear->mesh, &m_normalMapShader));
+                glm::vec3(1), &m_spear->mesh, &m_normalMapShader,temp));
         }
         else
         {
+            std::string temp = "Soul Spear: " + std::to_string(count);
+
             m_scene->AddInstances(new Instance(glm::vec3(i * 2, 0, 0), glm::vec3(0, 0, 0),
-                glm::vec3(1), &m_spear->mesh, &m_normalMapShader));
+                glm::vec3(1), &m_spear->mesh, &m_normalMapShader, temp));
         }
     }
 
@@ -431,7 +551,32 @@ bool Application3D::LoadShaperAndMeshLogic(Light a_light)
     m_scene->GetPointLights().push_back(Light(vec3(-5, 3, -5), vec3(0, 1, 0), 50)); // green
 
     m_scene->GetPointLights().push_back(Light(vec3(0, 5, 0), vec3(1, 1, 1), 30)); // dynamic
-
+    LastCamera();
     return true; // All loads correctly
+}
+
+void Application3D::LastCamera()
+{
+    std::string line;
+    std::fstream load("../bin/state.txt");
+
+    // Check in file for last camera state (which camera was rendering)
+    if (load.is_open()) {
+        while (std::getline(load, line)) {
+            if (line == "lastcamera=0") {
+                m_scene->ChangeCamera(0);
+            }
+            if (line == "lastcamera=1") {
+                m_scene->ChangeCamera(1);
+            }
+            if (line == "lastcamera=2") {
+                m_scene->ChangeCamera(2);
+            }
+            if (line == "lastcamera=3") {
+                m_scene->ChangeCamera(3);
+            }
+        }
+    }
+    
 }
 

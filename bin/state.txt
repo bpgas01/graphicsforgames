@@ -1,0 +1,1 @@
+lastcamera=0
