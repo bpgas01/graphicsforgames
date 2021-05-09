@@ -34,10 +34,10 @@ public:
 	void set_starting_color(const glm::vec4 color) { m_startColor = color; }
 	void set_ending_color(const glm::vec4 color) { m_endColor = color; }
 
-	void set_emit_rate(const float rate) { m_emitRate = rate; }
 	void set_lifespan(const float min, const float max) { m_lifespanMin = min; m_lifespanMax = max; }
 	void set_velocity(const float min, const float max) { m_velocityMin = min; m_velocityMax = max; }
 	void set_size(const float start_size, const float end_size) { m_endSize = end_size; m_startSize = start_size; }
+	void set_amount(const float amount) { m_maxParticles = amount; }
 
 	// initilise the emitter 
 	void initialise(unsigned int a_maxParticles,

@@ -100,7 +100,6 @@ void Application3D::DebugUI(float dt)
 	// Lighting settings
 #pragma region Lighting, Debug , Post Processing
     ImGui::Begin("Settings");
-    
     if (CollapsingHeader("Debug")) {
         if (Button("Enable Gizmos")) { gizmos = true;  }
         if (Button("Disable Gizmos")) { gizmos = false;  }
@@ -207,44 +206,57 @@ void Application3D::DebugUI(float dt)
         
     }
     m_scene->DebugUI(current_camera);
-    
 #pragma endregion
-    // Emitter Settings
+
 #pragma region Emitter
-    /*ImGui::Spacing();
-    ImGui::Text("EMITTER SETTINGS");
-    ImGui::SliderInt("Particle Amount", &ParticleAmount, 0, 25000);
-    ImGui::SliderFloat("Lifespan Min", &lifespan_min, 0.1, 5);
-    ImGui::SliderFloat("Lifespan Max", &lifespan_max, 0.1, 5);
-    ImGui::Spacing();
-    ImGui::SliderFloat("Velocity Min", &velocity_min, 1, 5);
-    ImGui::SliderFloat("Velocity Max", &velocity_max, 1, 5);
-    ImGui::Spacing();
-	ImGui::SliderFloat("Start Size", &start_size, 0.00, 2);
-    ImGui::SliderFloat("End Size", &end_size, 0.00, 2);
+    if (CollapsingHeader("Emitter")) {
+        Indent();
+        ImGui::Text("EMITTER SETTINGS");
+        if (Button("Enable Emitter")) {
+            emitter_enable = true;
+        }
+        SameLine();
+        if (Button("Disable Emitter")) {
+            emitter_enable = false;
+        }
 
-  
-    if (ImGui::CollapsingHeader("Start Color"))
-    {
-        ImGui::Text("Start Color");
-        ImGui::SliderFloat("Alpha", &start_alpha, 0, 1);
-        ColorPicker startColor("Start Color");
-        startColor.Picker(start_particle_color);
-        m_emitter->set_starting_color(glm::vec4(start_particle_color[0], start_particle_color[1], start_particle_color[2], start_alpha));
+        if (emitter_enable) {
+            ImGui::SliderInt("Particle Amount", &ParticleAmount, 0, 25000);
+            ImGui::SliderFloat("Lifespan Min", &lifespan_min, 0.1, 5);
+            ImGui::SliderFloat("Lifespan Max", &lifespan_max, 0.1, 5);
+            ImGui::Spacing();
+            ImGui::SliderFloat("Velocity Min", &velocity_min, 1, 5);
+            ImGui::SliderFloat("Velocity Max", &velocity_max, 1, 5);
+            ImGui::Spacing();
+            ImGui::SliderFloat("Start Size", &start_size, 0.00, 2);
+            ImGui::SliderFloat("End Size", &end_size, 0.00, 2);
+
+
+            if (ImGui::CollapsingHeader("Start Color"))
+            {
+                ImGui::Text("Start Color");
+                ImGui::SliderFloat("Alpha", &start_alpha, 0, 1);
+                ColorPicker startColor("Start Color");
+                startColor.Picker(start_particle_color);
+                m_emitter->set_starting_color(glm::vec4(start_particle_color[0], start_particle_color[1], start_particle_color[2], start_alpha));
+            }
+
+            if (ImGui::CollapsingHeader("End Color"))
+            {
+                ColorPicker endColor("End Color");
+                ImGui::SliderFloat("Alpha", &end_alpha, 0, 1);
+                ImGui::Text("End Color");
+                endColor.Picker(end_particle_color);
+                m_emitter->set_ending_color(glm::vec4(end_particle_color[0], end_particle_color[1], end_particle_color[2], end_alpha));
+            }
+
+            m_emitter->set_lifespan(lifespan_min, lifespan_max);
+            m_emitter->set_velocity(velocity_min, velocity_max);
+            m_emitter->set_size(start_size, end_size);
+            m_emitter->set_amount(ParticleAmount);
+        }
+        Unindent();
     }
-	
-	if (ImGui::CollapsingHeader("End Color"))
-    {
-        ColorPicker endColor("End Color");
-        ImGui::SliderFloat("Alpha", &end_alpha, 0, 1);
-        ImGui::Text("End Color");
-        endColor.Picker(end_particle_color);
-        m_emitter->set_ending_color(glm::vec4(end_particle_color[0], end_particle_color[1], end_particle_color[2], end_alpha));
-    }*/
-
-
-
-	
 	ImGui::End();
 #pragma endregion 
 }
@@ -330,8 +342,9 @@ void Application3D::draw()
     m_particleShader.bind();
     auto pvm = projectionMatrix * viewMatrix * temp;
     m_particleShader.bindUniform("ProjectionViewModel", pvm);
-    m_emitter->draw();
-
+    if (emitter_enable) {
+        m_emitter->draw();
+    }
     // Render gizmos for Point Lights
     for (auto i : m_scene->GetPointLights())
     {

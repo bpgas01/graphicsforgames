@@ -114,7 +114,7 @@ protected:
 	quadObject				m_quad;
 	
 
-
+	bool					emitter_enable = true; // toggle state of particle emitter
 	bool					blur = false; // post processing blur toggle
 	bool					gizmos = true; // if gizmos are enabled or not
 
